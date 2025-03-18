@@ -11,7 +11,7 @@ body {
   align-items: center; /* Center content horizontally */
   justify-content: center;
   text-align: center;
-  backdrop-filter: blur(50px);
+  backdrop-filter: blur(500px);
 }
 
 /* Add a background color with some transparency to make text more visible */
