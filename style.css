@@ -1,6 +1,6 @@
 /* Set up a cool galaxy background */
 body {
-  background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/newbackground.gif') no-repeat center center fixed;
+  background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/IMG_0583.gif') no-repeat center center fixed;
   backdrop-filter: blur(5px);
   background-size: cover;
   color: white;
