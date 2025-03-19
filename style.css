@@ -79,10 +79,11 @@ p {
 .game-container, .app-container {
   background-color: rgba(0, 0, 0, 0.6); /* Transparent black background */
   padding: 40px;
-  border-radius: 10px;
+  border-radius: 50px;
   max-width: 80%;
   margin-top: 80px;
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(251, 231, 239, 0.7);
 }
 
 .game-button {
