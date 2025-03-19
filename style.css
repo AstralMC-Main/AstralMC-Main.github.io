@@ -12,6 +12,7 @@ body {
   align-items: center; /* Center content horizontally */
   justify-content: center;
   text-align: center;
+  border: 3px groove;
 }
 
 /* Add a background color with some transparency to make text more visible */
