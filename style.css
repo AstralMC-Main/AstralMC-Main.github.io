@@ -65,10 +65,11 @@ p {
   font-size: 16px;
   text-decoration: none;
   font-weight: bold;
-  padding: 8px 5%;
+  padding: 8px 7%;
   border-radius: 15px;
   transition: all 0.3s ease;
   background-color: rgba(0, 0, 0, 0.3);
+  display: block;
 }
 
 .navbar a:hover {
