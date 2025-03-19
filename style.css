@@ -65,7 +65,7 @@ p {
   font-size: 16px;
   text-decoration: none;
   font-weight: bold;
-  padding: 10% 10px;
+  padding: 10px 10%;
   border-radius: 20px;
   transition: all 0.3s ease;
   background-color: rgba(0, 0, 0, 0.3);
