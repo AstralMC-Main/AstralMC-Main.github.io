@@ -69,7 +69,6 @@ p {
   border-radius: 15px;
   transition: all 0.3s ease;
   background-color: rgba(0, 0, 0, 0.3);
-  display: block;
 }
 
 .navbar a:hover {
