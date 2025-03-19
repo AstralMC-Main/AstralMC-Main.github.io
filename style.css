@@ -21,7 +21,7 @@ body {
   padding: 40px;
   border-radius: 50px;
   max-width: 80%; /* Prevents content from being too wide */
-  border: 1px solid rgba(251, 231, 239, 0.7);
+  border: 0.2px solid rgba(251, 231, 239, 0.7);
 }
 
 h1 {
