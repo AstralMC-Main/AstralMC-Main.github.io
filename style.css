@@ -94,7 +94,7 @@ p {
   padding: 15px;
   margin: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 30px;
   text-decoration: none;
   font-size: 18px;
   transition: background-color 0.3s ease;
@@ -109,7 +109,7 @@ p {
   padding: 15px 30px;
   margin: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 30px;
   text-decoration: none;
   font-size: 18px;
   transition: background-color 0.3s ease;
