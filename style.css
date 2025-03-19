@@ -47,7 +47,7 @@ p {
   z-index: 10;
   border-radius: 30px;
   border: 1px solid rgba(251, 231, 239, 0.7);
-  max-width: 80%;
+  max-width: 100%;
 }
 
 .navbar ul {
