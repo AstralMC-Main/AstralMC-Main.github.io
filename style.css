@@ -43,7 +43,7 @@ p {
   right: 20px;
   top: 20px;
   display: flex;
-  gap: 50px;
+  gap: 20px;
   z-index: 10;
   border-radius: 30px;
   border: 1px solid rgba(251, 231, 239, 0.7);
@@ -56,7 +56,7 @@ p {
 }
 
 .navbar li {
-  padding: 5px;
+  padding: 5px 10px;
 }
 
 .navbar a {
