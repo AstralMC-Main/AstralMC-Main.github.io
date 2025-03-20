@@ -1,0 +1,56 @@
+body {
+display: flex;
+align-items: center;
+justify-content: center;
+height: 100vh;
+}
+.toggle {
+visiblility: hidden;
+}
+.label {
+background-color: #d0d0d0;
+width: 80px;
+height: 40px;
+border-radius: 50px;
+cursor: pointer;
+display: inline-block;
+position: relative;
+}
+.toggle:checked + .label {
+background-color: rgba(245, 40, 145, 0.8);
+}
+.ball {
+background-color: #ffffff;
+width: 37px;
+height: 37px;
+border-radius: 50px;
+position: absolute;
+top: 1.5px;
+left: 1.5px;
+animation: slideOff 0.3s linear fowards;
+}
+.toggle:checked + .label .ball {
+animation: slideOn 0.3s linear fowards;
+}
+@keyframes slideOn {
+0% {
+transform: translateX(0) scale(1);
+}
+50% {
+transform: translateX(25px) scale(1);
+}
+100% {
+transform: translateX(40px) scale(1);
+}
+}
+@keyframes slideOff {
+100% {
+transform: translateX(40px) scale(1);
+}
+50% {
+transform: translateX(15px) scale(1);
+}
+0% {
+transform: translateX(0) scale(1);
+}
+}
