@@ -1,3 +1,34 @@
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #333;
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    font-size: 14px;
+    z-index: 1000;
+}
+
+.cookie-banner button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+.cookie-banner a {
+    color: #FFD700;
+    text-decoration: none;
+}
+
+.cookie-banner a:hover {
+    text-decoration: underline;
+}
 /* Set up a cool galaxy background */
 body {
   background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/IMG_0583.gif') no-repeat center center fixed;
