@@ -161,7 +161,7 @@ p {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #007bff;
+    background-color: rgba(255, 255, 255, 0.2);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -169,6 +169,10 @@ p {
     cursor: pointer;
     font-size: 14px;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.credit-button:hover {
+    background-color: rgba(255, 255, 255, 0.5);
 }
 
 .toggle-container {
