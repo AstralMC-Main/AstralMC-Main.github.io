@@ -1,44 +1,57 @@
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
 }
-.toggle {
-  visiblility: hidden;
+
+.wrapper {
+    text-align: center;
 }
-.label {
-  background-color: #d0d0d0;
-  width: 80px;
-  height: 40px;
-  border-radius: 50px;
-  cursor: pointer;
-  display: inline-block;
-  position: relative;
+
+.toggle-container {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
 }
-.toggle:checked + .label {
-  background-color: rgba(245, 40, 145, 0.5);
+
+.toggle-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
-.ball {
-  background-color: #ffffff;
-  width: 33px;
-  height: 33px;
-  border-radius: 50px;
-  position: absolute;
-  top: 3.5px;
-  left: 3.5px;
-  animation: slideOff 0.2s linear forwards;
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
 }
-.toggle:checked + .label .ball {
-  animation: slideOn 0.2s linear forwards;
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
 }
-@keyframes slideOn {
-  0% {transform: translateX(0) scale(1);}
-  50% {transform: translateX(25px) scale(1);}
-  100% {transform: translateX(40px) scale(1);}
+
+input:checked + .toggle-slider {
+    background-color: #4CAF50;
 }
-@keyframes slideOff {
-  100% {transform: translateX(0) scale(1);}
-  50% {transform: translateX(15px) scale(1);}
-  0% {transform: translateX(40px)  scale(1);}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(26px);
 }
