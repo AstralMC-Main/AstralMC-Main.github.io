@@ -27,30 +27,18 @@ body {
   position: absolute;
   top: 3.5px;
   left: 3.5px;
-  animation: slideOff 0.3s linear fowards;
+  -webkit-animation: slideOff 0.3s linear fowards;
 }
 .toggle:checked + .label .ball {
-  animation: slideOn 0.3s linear fowards;
+  -webkit-animation: slideOn 0.3s linear fowards;
 }
-@keyframes slideOn {
-  0% {
-    transform: translateX(0) scale(1);
-  }
-  50% {
-    transform: translateX(25px) scale(1);
-  }
-  100% {
-    transform: translateX(40px) scale(1);
-  }
+@-webkit-keyframes slideOn {
+  0% {transform: translateX(0) scale(1);}
+  50% {transform: translateX(25px) scale(1);}
+  100% {transform: translateX(40px) scale(1);}
 }
-@keyframes slideOff {
-  100% {
-    transform: translateX(40px) scale(1);
-  }
-  50% {
-    transform: translateX(15px) scale(1);
-  }
-  0% {
-    transform: translateX(0) scale(1);
-  }
+@-webkit-keyframes slideOff {
+  100% {transform: translateX(40px) scale(1);}
+  50% {transform: translateX(15px) scale(1);}
+  0% {transform: translateX(0)  scale(1);}
 }
