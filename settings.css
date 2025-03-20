@@ -17,7 +17,7 @@ body {
   position: relative;
 }
 .toggle:checked + .label {
-  background-color: rgba(245, 40, 145, 0.8);
+  background-color: rgba(245, 40, 145, 0.5);
 }
 .ball {
   background-color: #ffffff;
@@ -27,17 +27,17 @@ body {
   position: absolute;
   top: 3.5px;
   left: 3.5px;
-  -webkit-animation: slideOff 0.3s linear;
+  animation: slideOff 0.1s linear forwards;
 }
 .toggle:checked + .label .ball {
-  -webkit-animation: slideOn 0.3s linear;
+  animation: slideOn 0.1s linear forwards;
 }
-@-webkit-keyframes slideOn {
+@keyframes slideOn {
   0% {transform: translateX(0) scale(1);}
   50% {transform: translateX(25px) scale(1);}
   100% {transform: translateX(40px) scale(1);}
 }
-@-webkit-keyframes slideOff {
+@keyframes slideOff {
   100% {transform: translateX(40px) scale(1);}
   50% {transform: translateX(15px) scale(1);}
   0% {transform: translateX(0)  scale(1);}
