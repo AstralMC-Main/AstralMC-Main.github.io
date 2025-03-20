@@ -91,7 +91,21 @@
     .game-button:hover {
       background-color: rgba(179, 0, 128, 1);
     }
-
+    #hidden {
+      display: inline-block;
+      background-color: rgba(255, 122, 191, 0.7);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 15px 30px;
+      margin: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #hidden:hover {
+      background-color: rgba(179, 0, 128, 1);
+    }
   </style>
 </head>
 <body>
@@ -103,10 +117,21 @@
 
     <a href="https://yee.pages.dev/" class="game-button">Eaglercraft</a>
     <a href="https://yee.pages.dev/#bW9yZS9tb3JlL3BpeGVsd2FzbTEy" class="game-button">Eaglercraft 1.12.2</a>
-    <a href="https://adsf1234-hacker.github.io/BiggestEaglercraftHackedClientCollection/" class="game-button">Eaglercraft Hacked Clients</a> 
+    <div id="hidden">
+      <a href="https://adsf1234-hacker.github.io/BiggestEaglercraftHackedClientCollection/" class="game-button">Eaglercraft Hacked Clients</a> 
+    </div>
     <a href="https://astraclientorg.github.io/wasm/" class="game-button">Astra Client WASM</a>
     <a href="https://astralmc-main.github.io/" class="game-button">Coming Soon...</a>
   </div>
-
+<script>
+function hiddentoggle() {
+  var x = document.getElementById("hidden");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+</script>
 </body>
 </html>
