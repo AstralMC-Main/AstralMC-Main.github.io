@@ -1,11 +1,12 @@
 body {
     background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/IMG_0583.gif') no-repeat center center fixed;
+    backdrop-filter: blur(5px);
+    background-size: cover;
     font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #f4f4f4;
 }
 
 .wrapper {
