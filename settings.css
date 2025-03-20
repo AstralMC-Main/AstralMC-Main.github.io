@@ -21,12 +21,12 @@ body {
 }
 .ball {
   background-color: #ffffff;
-  width: 35px;
-  height: 35px;
+  width: 33px;
+  height: 33px;
   border-radius: 50px;
   position: absolute;
-  top: 2.5px;
-  left: 2.5px;
+  top: 3.5px;
+  left: 3.5px;
   animation: slideOff 0.3s linear fowards;
 }
 .toggle:checked + .label .ball {
