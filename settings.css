@@ -27,10 +27,10 @@ body {
   position: absolute;
   top: 3.5px;
   left: 3.5px;
-  -webkit-animation: slideOff 0.3s linear fowards;
+  -webkit-animation: slideOff 0.3s linear;
 }
 .toggle:checked + .label .ball {
-  -webkit-animation: slideOn 0.3s linear fowards;
+  -webkit-animation: slideOn 0.3s linear;
 }
 @-webkit-keyframes slideOn {
   0% {transform: translateX(0) scale(1);}
