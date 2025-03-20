@@ -21,8 +21,8 @@ background-color: rgba(245, 40, 145, 0.8);
 }
 .ball {
 background-color: #ffffff;
-width: 37px;
-height: 37px;
+width: 35px;
+height: 35px;
 border-radius: 50px;
 position: absolute;
 top: 1.5px;
