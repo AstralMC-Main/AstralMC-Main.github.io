@@ -13,7 +13,6 @@
         body {
             font-family: Arial, sans-serif;
             background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/IMG_0583.gif') no-repeat center center fixed;
-            backdrop-filter: blur(5px);
             background-size: cover;
             color: white;
             text-align: center;
@@ -22,6 +21,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            backdrop-filter: blur(5%);
         }
         .navigation-bar {
             display: flex;
@@ -31,25 +31,62 @@
             padding: 15px 20px;
             color: white;
             width: 100%;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             border-bottom: 1px solid rgba(251, 231, 239, 0.7);
+            z-index: 1000;
         }
         .menu-links {
             list-style: none;
-            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            text-align: center;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            max-height: 0;
+            overflow: hidden;
             transition: max-height 0.4s ease-in-out;
         }
         .menu-links li {
-            margin: 0 15px;
+            padding: 15px;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
         }
         .menu-links a {
             text-decoration: none;
             color: white;
             font-size: 18px;
+            display: block;
+            padding: 10px;
+            transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
+            position: relative;
         }
-        /* Hamburger Menu Styles */
+        /* Glowing Hover Effect */
+        .menu-links li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        .menu-links a:hover {
+            color: #FFD700;
+        }
+        /* Underline Hover Effect */
+        .menu-links a::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 0%;
+            height: 2px;
+            background-color: #FFD700;
+            transition: width 0.3s ease-in-out, left 0.3s ease-in-out;
+        }
+        .menu-links a:hover::after {
+            width: 100%;
+            left: 0;
+        }
+        /* Hamburger Menu */
         .menu-toggle {
             display: none;
             flex-direction: column;
@@ -62,30 +99,16 @@
             margin: 4px 0;
             border-radius: 2px;
         }
-        /* Responsive Design */
+        /* Responsive Dropdown */
         @media (max-width: 768px) {
-            .menu-links {
-                flex-direction: column;
-                position: absolute;
-                top: 60px;
-                left: 0;
-                width: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                text-align: center;
-                overflow: hidden;
-                max-height: 0; /* Initially hidden */
-            }
-            .menu-links li {
-                margin: 10px 0;
-                padding: 10px;
-            }
             .menu-toggle {
                 display: flex;
             }
-            /* Active class to expand menu */
+            .menu-links {
+                display: flex;
+            }
             .menu-links.active {
-                max-height: 300px; /* Adjust height as needed */
-                padding: 10px 0;
+                max-height: 300px;
             }
         }
         .content {
@@ -97,6 +120,7 @@
             border: 1px solid rgba(251, 231, 239, 0.7);
             display: inline-block;
             margin: auto;
+            margin-top: 80px; /* Prevent content from being hidden under nav */
         }
         .cookie-banner {
             position: fixed;
@@ -180,7 +204,14 @@
             var menu = document.querySelector('.menu-links');
             menu.classList.toggle('active');
         }
+
+        document.getElementById("accept-cookies").addEventListener("click", function() {
+            var banner = document.getElementById("cookie-banner");
+            banner.style.opacity = "0";
+            setTimeout(() => {
+                banner.style.display = "none";
+            }, 500);
+        });
     </script>
-    <script src="cookie.js"></script>
 </body>
 </html>
