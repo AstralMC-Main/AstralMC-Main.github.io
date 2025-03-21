@@ -17,8 +17,11 @@
             background-size: cover;
             color: white;
             text-align: center;
-            align-items: center; /* Center content horizontally */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            height: 100vh;
         }
         .navigation-bar {
             display: flex;
@@ -27,9 +30,11 @@
             background: rgba(0, 0, 0, 0.6);
             padding: 15px 20px;
             color: white;
-            border-radius: 00px;
-            border: 1px solid rgba(251, 231, 239, 0.7);
-            border-style: none none solid none;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-bottom: 1px solid rgba(251, 231, 239, 0.7);
         }
         .menu-links {
             list-style: none;
@@ -43,33 +48,17 @@
             color: white;
             font-size: 18px;
         }
-        .menu-toggle {
-            display: none;
-            flex-direction: column;
-            cursor: pointer;
+        .content {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 50px;
+            max-width: 80%;
+            border: 1px solid rgba(251, 231, 239, 0.7);
+            display: inline-block;
+            margin: auto;
         }
-h1 {
-  font-size: 50px;
-  font-weight: bold;
-  color: #ffffff; / White text /
-  margin: 0;
-}
-
-p {
-  font-size: 18px;
-  margin-top: 10px;
-}
-      .content {
-  background-color: rgba(0, 0, 0, 0.6); /* Transparent black background */
-  backdrop-filter: blur(10px);
-  padding: 40px;
-  border-radius: 50px;
-  max-width: 80%; /* Prevents content from being too wide */
-  border: 1px solid rgba(251, 231, 239, 0.7);
-  display: inline-block;
-  margin: 0vh 0;
-      }
-      .cookie-banner {
+.cookie-banner {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -97,23 +86,6 @@ p {
     color: #FFD700;
     text-decoration: none;
 }
-.credit-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.credit-button:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-}
 
 .cookie-banner a:hover {
     text-decoration: underline;
@@ -131,31 +103,6 @@ p {
   font-size: 18px;
   transition: background-color 0.3s ease;
 }
-
-        .menu-toggle div {
-            width: 30px;
-            height: 3px;
-            background: white;
-            margin: 5px 0;
-        }
-        @media screen and (max-width: 768px) {
-            .menu-links {
-                display: none;
-                flex-direction: column;
-                width: 100%;
-                position: absolute;
-                top: 60px;
-                left: 0;
-                background: rgba(0, 0, 0, 0.6);
-                border-radius: 10px;
-                border: 1px solid rgba(251, 231, 239, 0.7);
-            }
-            .menu-links.active {
-                display: flex;
-            }
-            .menu-toggle {
-                display: flex;
-            }
         }
     </style>
 </head>
@@ -168,28 +115,15 @@ p {
             <li><a href="/games">Games</a></li>
             <li><a href="/settings">Settings</a></li>
         </ul>
-        <div class="menu-toggle" onclick="toggleMenu()">
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
     </nav>
-
-    <script>
-        function toggleMenu() {
-            document.querySelector('.menu-links').classList.toggle('active');
-        }
-    </script>
-  
+    
    <div class="content">
-    <h1>Astral MC</h1> <!-- Changed to Creayun -->
+    <h1>Astral MC</h1>
     <p>This is heavily work in progress</p>
     <p>Please Report Bugs/Issues/Suggestions to the Discord server: 
       <a href="https://discord.com/invite/VmWuGeQzpt" class="game-button">Discord</a>
     </p>
   </div>
-    <button class="credit-button" data-href="/credits">Credits</button>
-  
   
   <div id="cookie-banner" class="cookie-banner">
       <p>This website uses cookies to ensure you get the best experience. <a href="#">Learn more</a></p>
