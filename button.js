@@ -4,20 +4,27 @@ document.addEventListener("DOMContentLoaded", function () {
     // Retrieve stored toggle state
     const savedToggleState = localStorage.getItem("toggleState");
 
-    console.log("Saved Toggle State:", savedToggleState); // Debugging log
-
     if (savedToggleState === "on") {
         toggleButton.checked = true;
-    } else if (savedToggleState === "off") {
+        hiddentoggle(); // Activate function if state was ON before reload
+    } else {
         toggleButton.checked = false;
     }
 
-    // Update localStorage when the toggle changes
+    // Update localStorage and activate function on change
     toggleButton.addEventListener("change", function () {
         if (toggleButton.checked) {
             localStorage.setItem("toggleState", "on");
+            hiddentoggle();
         } else {
             localStorage.setItem("toggleState", "off");
+            hiddentoggle();
         }
     });
 });
+
+// Example function that will be triggered when toggled
+function hiddentoggle() {
+    console.log("hiddentoggle() function activated!");
+    // Add your custom logic here
+}
