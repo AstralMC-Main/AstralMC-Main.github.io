@@ -39,54 +39,39 @@
         }
         .menu-links {
             list-style: none;
-            flex-direction: column;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            text-align: center;
-            position: fixed;
-            top: 60px;
-            left: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out;
+            display: flex;
+            transition: transform 0.4s ease-in-out;
         }
         .menu-links li {
-            padding: 15px;
-            transition: background 0.3s ease, box-shadow 0.3s ease;
+            margin: 0 15px;
+            position: relative;
         }
         .menu-links a {
             text-decoration: none;
             color: white;
             font-size: 18px;
-            display: block;
-            padding: 10px;
-            transition: color 0.3s ease-in-out, text-decoration 0.3s ease-in-out;
+            transition: color 0.3s ease-in-out;
             position: relative;
-        }
-        /* Glowing Hover Effect */
-        .menu-links li:hover {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+            padding-bottom: 5px;
         }
         .menu-links a:hover {
             color: #FFD700;
         }
-        /* Underline Hover Effect */
         .menu-links a::after {
             content: "";
             position: absolute;
-            left: 50%;
+            left: 0;
             bottom: 0;
-            width: 0%;
+            width: 100%;
             height: 2px;
             background-color: #FFD700;
-            transition: width 0.3s ease-in-out, left 0.3s ease-in-out;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.3s ease-in-out;
         }
         .menu-links a:hover::after {
-            width: 100%;
-            left: 0;
+            transform: scaleX(1);
         }
-        /* Hamburger Menu */
         .menu-toggle {
             display: none;
             flex-direction: column;
@@ -99,16 +84,45 @@
             margin: 4px 0;
             border-radius: 2px;
         }
-        /* Responsive Dropdown */
         @media (max-width: 768px) {
             .menu-toggle {
                 display: flex;
             }
             .menu-links {
-                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                text-align: center;
+                overflow: hidden;
+                transform: translateY(-200%);
+                box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
+                border-radius: 0 0 10px 10px;
+                transition: transform 0.4s ease-in-out;
             }
             .menu-links.active {
-                max-height: 300px;
+                transform: translateY(0);
+            }
+            .menu-links li {
+                padding: 15px;
+                width: 100%;
+            }
+            .menu-links li:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+            .menu-links a {
+                display: block;
+                width: 100%;
+                text-align: center;
+                padding: 10px 0;
+            }
+            .menu-links a::after {
+                left: 0;
+                right: 0;
+                width: 100%;
+                transform-origin: center;
             }
         }
         .content {
@@ -120,7 +134,7 @@
             border: 1px solid rgba(251, 231, 239, 0.7);
             display: inline-block;
             margin: auto;
-            margin-top: 80px; /* Prevent content from being hidden under nav */
+            margin-top: 80px;
         }
         .cookie-banner {
             position: fixed;
@@ -164,19 +178,19 @@
             font-size: 18px;
             transition: background-color 0.3s ease;
         }
+        .game-button:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
     </style>
 </head>
 <body>
     <nav class="navigation-bar">
         <img src="favicon.ico" alt="Website Icon" width="40" height="40">
-        
-        <!-- Menu Toggle Button -->
         <div class="menu-toggle" onclick="toggleMenu()">
             <div></div>
             <div></div>
             <div></div>
         </div>
-
         <ul class="menu-links">
             <li><a href="astralmc-main.github.io">Home</a></li>
             <li><a href="#">Discord</a></li>
@@ -185,7 +199,6 @@
             <li><a href="/empty">Soon</a></li>
         </ul>
     </nav>
-    
     <div class="content">
         <h1>Astral MC</h1>
         <p>This is heavily work in progress</p>
@@ -193,25 +206,9 @@
             <a href="https://discord.com/invite/VmWuGeQzpt" class="game-button">Discord</a>
         </p>
     </div>
-    
     <div id="cookie-banner" class="cookie-banner">
         <p>This website uses cookies to ensure you get the best experience. <a href="#">Learn more</a></p>
         <button id="accept-cookies">Got it!</button>
     </div>
-
-    <script>
-        function toggleMenu() {
-            var menu = document.querySelector('.menu-links');
-            menu.classList.toggle('active');
-        }
-
-        document.getElementById("accept-cookies").addEventListener("click", function() {
-            var banner = document.getElementById("cookie-banner");
-            banner.style.opacity = "0";
-            setTimeout(() => {
-                banner.style.display = "none";
-            }, 500);
-        });
-    </script>
 </body>
 </html>
