@@ -15,35 +15,50 @@
         </label>
         <p>Experimental Button</p>
     </div>
+    
+    <div id="banner" class="banner">
+        <span>Toggle is ON!</span>
+        <button id="closeBanner" class="close-btn">&times;</button>
+    </div>
+    
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const toggleButton = document.getElementById("toggleButton");
+            const banner = document.getElementById("banner");
+            const closeBannerBtn = document.getElementById("closeBanner");
 
-            // Retrieve stored toggle state
+            // Retrieve stored states
             const savedToggleState = localStorage.getItem("toggleState");
+            const savedBannerState = localStorage.getItem("bannerHidden");
 
             if (savedToggleState === "on") {
                 toggleButton.checked = true;
-                hiddentoggle();
+                if (savedBannerState !== "true") {
+                    banner.style.display = "flex"; // Show banner only if not manually dismissed
+                }
             } else {
                 toggleButton.checked = false;
+                banner.style.display = "none";
             }
 
-            // Update localStorage and activate function on change
+            // Toggle event listener
             toggleButton.addEventListener("change", function () {
                 if (toggleButton.checked) {
                     localStorage.setItem("toggleState", "on");
-                    hiddentoggle();
+                    localStorage.removeItem("bannerHidden"); // Reset manual dismissal
+                    banner.style.display = "flex";
                 } else {
                     localStorage.setItem("toggleState", "off");
-                    hiddentoggle();
+                    banner.style.display = "none";
                 }
             });
-        });
 
-        function hiddentoggle() {
-            console.log("hiddentoggle() function activated!");
-        }
+            // Close banner manually
+            closeBannerBtn.addEventListener("click", function () {
+                banner.style.display = "none";
+                localStorage.setItem("bannerHidden", "true"); // Remember manual dismissal
+            });
+        });
     </script>
 
 </body>
