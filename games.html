@@ -5,72 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Games</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: url('https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/main/IMG_0583.gif') no-repeat center center fixed; background-size: cover; color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; backdrop-filter: blur(5%); }
-    .content { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px); padding: 40px; border-radius: 50px; max-width: 80%; border: 1px solid rgba(251, 231, 239, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin: auto; margin-top: 100px; }
-    .game-button { display: block; background-color: rgba(255, 255, 255, 0.2); color: white; font-weight: bold; padding: 15px; margin: 10px; border: none; border-radius: 30px; text-decoration: none; font-size: 18px; transition: background-color 0.3s ease; }
-    .game-button:hover { background-color: rgba(255, 255, 255, 0.4); }
-    #hiddenButton { display: none; background-color: rgba(255, 122, 191, 0.7); color: white; font-size: 18px; padding: 15px 30px; margin: 10px; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease; }
-    #hiddenButton:hover { background-color: rgba(179, 0, 128, 1); }
+    /* Set up a cool galaxy background */
+    body {
+      background-size: cover;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Add a background color with some transparency to make text more visible */
+    .content {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 40px;
+      border-radius: 50px;
+      max-width: 80%;
+      margin: auto;
+      border: 1px solid rgba(251, 231, 239, 0.7);
+    }
+    
+    .transparent {
+      background-color: rgba(0, 0, 0, 0);
+    }
+    
+    h1 {
+      font-size: 50px;
+      font-weight: bold;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    p {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    /* Navbar Styling on the Top Right */
+    .navbar {
+      position: absolute;
+      backdrop-filter: blur(10px);
+      right: 20px;
+      top: 20px;
+      display: flex;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    .navbar ul {
+      list-style-type: none;
+      display: flex;
+      padding: 0;
+    }
+
+    .navbar li {
+      padding: 10px;
+    }
+
+    .navbar a {
+      color: white;
+      font-size: 16px;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .navbar a:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Game Button Styling */
+    .game-button {
+      display: inline-block;
+      background-color: rgba(255, 122, 191, 0.7);
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 15px 30px;
+      margin: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .game-button:hover {
+      background-color: rgba(179, 0, 128, 1);
+    }
+    #hidden {
+      display: inline-block;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      margin: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    
   </style>
 </head>
 <body>
+
+  <!-- Games Content Section -->
   <div class="content">
     <h1>🎮 Games</h1>
     <p>Play your favorite games unblocked!</p>
+
     <a href="https://yee.pages.dev/" class="game-button">Eaglercraft</a>
     <a href="https://yee.pages.dev/#bW9yZS9tb3JlL3BpeGVsd2FzbTEy" class="game-button">Eaglercraft 1.12.2</a>
     <a href="https://astraclientorg.github.io/wasm/" class="game-button">Astra Client WASM</a>
     <a href="https://astralmc-main.github.io/" class="game-button">Coming Soon...</a>
-    
-    <!-- Hidden Button -->
-    <button id="hiddenButton">Special Hidden Button</button>
   </div>
+    <div id="hiddenElement" class="transparent">
+       <a href="https://adsf1234-hacker.github.io/BiggestEaglercraftHackedClientCollection/" class="game-button">Eaglercraft Hacked Clients</a> 
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const hiddenElement = document.getElementById("hiddenElement");
 
-  <script>
-    // Function to get a cookie by name
-    function getCookie(name) {
-      let decodedCookie = decodeURIComponent(document.cookie);
-      let ca = decodedCookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        if (c.indexOf(name) === 0) {
-          return c.substring(name.length, c.length);
-        }
-      }
-      return "";
-    }
+            // Retrieve stored toggle state
+            const savedToggleState = localStorage.getItem("toggleState");
 
-    // Function to set a cookie
-    function setCookie(name, value, days) {
-      let d = new Date();
-      d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-      let expires = "expires=" + d.toUTCString();
-      document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    }
-
-    // Check cookie for the hidden button visibility
-    window.addEventListener("DOMContentLoaded", function () {
-      const hiddenButton = document.getElementById("hiddenButton");
-      const buttonState = getCookie("hiddenButtonState");
-
-      if (buttonState === "visible") {
-        hiddenButton.style.display = "inline-block"; // Show the hidden button
-      } else {
-        hiddenButton.style.display = "none"; // Hide the hidden button
-      }
-
-      // Toggle button visibility on click
-      hiddenButton.addEventListener("click", function () {
-        if (hiddenButton.style.display === "none") {
-          hiddenButton.style.display = "inline-block";
-          setCookie("hiddenButtonState", "visible", 7); // Show and set cookie
-        } else {
-          hiddenButton.style.display = "none";
-          setCookie("hiddenButtonState", "hidden", 7); // Hide and set cookie
-        }
-      });
-    });
-  </script>
+            if (savedToggleState === "on") {
+                hiddenElement.style.display = "block"; // Show element
+            } else {
+                hiddenElement.style.display = "none"; // Hide element
+            }
+        });
+    </script>
 </body>
 </html>
