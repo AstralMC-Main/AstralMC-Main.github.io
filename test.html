@@ -39,6 +39,7 @@
         .menu-links {
             list-style: none;
             display: flex;
+            transition: max-height 0.4s ease-in-out;
         }
         .menu-links li {
             margin: 0 15px;
@@ -64,7 +65,6 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .menu-links {
-                display: none;
                 flex-direction: column;
                 position: absolute;
                 top: 60px;
@@ -72,13 +72,20 @@
                 width: 100%;
                 background: rgba(0, 0, 0, 0.8);
                 text-align: center;
-                padding: 10px 0;
+                overflow: hidden;
+                max-height: 0; /* Initially hidden */
             }
             .menu-links li {
                 margin: 10px 0;
+                padding: 10px;
             }
             .menu-toggle {
                 display: flex;
+            }
+            /* Active class to expand menu */
+            .menu-links.active {
+                max-height: 300px; /* Adjust height as needed */
+                padding: 10px 0;
             }
         }
         .content {
@@ -171,7 +178,7 @@
     <script>
         function toggleMenu() {
             var menu = document.querySelector('.menu-links');
-            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+            menu.classList.toggle('active');
         }
     </script>
     <script src="cookie.js"></script>
