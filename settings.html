@@ -15,6 +15,36 @@
         </label>
         <p>Experimental Button</p>
     </div>
-    <script src="button.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const toggleButton = document.getElementById("toggleButton");
+
+            // Retrieve stored toggle state
+            const savedToggleState = localStorage.getItem("toggleState");
+
+            if (savedToggleState === "on") {
+                toggleButton.checked = true;
+                hiddentoggle();
+            } else {
+                toggleButton.checked = false;
+            }
+
+            // Update localStorage and activate function on change
+            toggleButton.addEventListener("change", function () {
+                if (toggleButton.checked) {
+                    localStorage.setItem("toggleState", "on");
+                    hiddentoggle();
+                } else {
+                    localStorage.setItem("toggleState", "off");
+                    hiddentoggle();
+                }
+            });
+        });
+
+        function hiddentoggle() {
+            console.log("hiddentoggle() function activated!");
+        }
+    </script>
+
 </body>
 </html>
