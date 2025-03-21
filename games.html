@@ -121,18 +121,21 @@
     <a href="https://astralmc-main.github.io/" class="game-button">Coming Soon...</a>
   </div>
     <div id="hiddenElement" class="game-button">
-        <!-- This is where the hidden element go -->
+       <a href="https://adsf1234-hacker.github.io/BiggestEaglercraftHackedClientCollection/" class="game-button">Eaglercraft Hacked Clients</a> 
     </div>
-<script>
-function hiddentoggle() {
-  var x = document.getElementById("hidden");
-  if (x.style.display === "none") {
-    x.style.display = "block";
-  } else {
-    x.style.display = "none";
-  }
-}
-</script>
-<button onclick="hiddentoggle()">Hidden</button>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const hiddenElement = document.getElementById("hiddenElement");
+
+            // Retrieve stored toggle state
+            const savedToggleState = localStorage.getItem("toggleState");
+
+            if (savedToggleState === "on") {
+                hiddenElement.style.display = "block"; // Show element
+            } else {
+                hiddenElement.style.display = "none"; // Hide element
+            }
+        });
+    </script>
 </body>
 </html>
