@@ -262,21 +262,24 @@
         <p>This website uses cookies to ensure you get the best experience. <a href="#" class="learnmore">Learn more</a></p>
         <button id="accept-cookies">Got it!</button>
     </div>
-    <script>
-        // Check if the user has already accepted the cookies
-        window.onload = function() {
-            if (localStorage.getItem('cookiesAccepted') === 'true') {
-                var cookieBanner = document.getElementById('cookie-banner');
-                cookieBanner.style.display = 'none'; // Hide the banner if accepted
+<script>
+    window.onload = function() {
+        var cookieBanner = document.getElementById('cookie-banner');
+        cookieBanner.style.display = 'none'; // Hide initially
+        
+        // Delay showing the banner only if the user hasn't accepted cookies
+        setTimeout(function() {
+            if (localStorage.getItem('cookiesAccepted') !== 'true') {
+                cookieBanner.style.display = 'block'; // Show the banner if not accepted
             }
-        };
+        }, 500); // Delay to ensure smooth loading
+    };
 
-        // Event listener for the "Got it!" button
-        document.getElementById('accept-cookies').addEventListener('click', function() {
-            var cookieBanner = document.getElementById('cookie-banner');
-            cookieBanner.classList.add('hidden'); // Fade out the banner
-            localStorage.setItem('cookiesAccepted', 'true'); // Store the acceptance in localStorage
-        });
+    document.getElementById('accept-cookies').addEventListener('click', function() {
+        var cookieBanner = document.getElementById('cookie-banner');
+        cookieBanner.classList.add('hidden'); // Fade out the banner
+        localStorage.setItem('cookiesAccepted', 'true'); // Store the acceptance in localStorage
+    });
 
         function toggleMenu() {
             var menu = document.querySelector('.menu-links');
