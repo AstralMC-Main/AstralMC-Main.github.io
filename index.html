@@ -261,11 +261,11 @@
             menu.classList.toggle('active');
         }
     </script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var menuLinks = document.querySelectorAll('.menu-links a[data-href]');
             var iframe = document.getElementById('embed-frame');
+            var content = document.querySelector('.content'); // Select the content div
 
             menuLinks.forEach(link => {
                 link.addEventListener('click', function(event) {
@@ -273,6 +273,7 @@
                     var page = this.getAttribute('data-href'); 
                     iframe.src = page; // Update iframe source
                     iframe.style.display = 'block'; // Make iframe visible
+                    content.style.display = 'none'; // Hide the content
                 });
             });
         });
