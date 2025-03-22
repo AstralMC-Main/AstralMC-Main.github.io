@@ -263,28 +263,27 @@
         <button id="accept-cookies">Got it!</button>
     </div>
     <script>
-        window.onload = function() {
-            var cookieBanner = document.getElementById('cookie-banner');
-
-            // Check if cookies were accepted
-            if (localStorage.getItem('cookiesAccepted') === 'true') {
-                cookieBanner.style.display = 'none'; // Keep it hidden if accepted
+        document.addEventListener("DOMContentLoaded", function () {
+            var cookieBanner = document.getElementById("cookie-banner");
+            var acceptButton = document.getElementById("accept-cookies");
+    
+            // Check localStorage when page loads
+            if (localStorage.getItem("cookiesAccepted") === "true") {
+                cookieBanner.style.display = "none"; // Hide if cookies were accepted
             } else {
-                setTimeout(function() {
-                    cookieBanner.style.display = 'block'; // Show only if not accepted
-                }, 500); // Delay to ensure smooth loading
+                cookieBanner.style.display = "block"; // Show if cookies not accepted
             }
-        };
-
-        document.getElementById('accept-cookies').addEventListener('click', function() {
-            var cookieBanner = document.getElementById('cookie-banner');
-            cookieBanner.classList.add('hidden'); // Fade out the banner
-            localStorage.setItem('cookiesAccepted', 'true'); // Store acceptance in localStorage
-
-            // Hide completely after animation
-            setTimeout(() => {
-                cookieBanner.style.display = 'none';
-            }, 500);
+    
+            // Handle "Got it!" button click
+            acceptButton.addEventListener("click", function () {
+                localStorage.setItem("cookiesAccepted", "true"); // Save acceptance
+                cookieBanner.classList.add("hidden"); // Fade out
+    
+                // Ensure it's fully hidden after transition
+                setTimeout(() => {
+                    cookieBanner.style.display = "none";
+                }, 500);
+            });
         });
 
         function toggleMenu() {
