@@ -255,7 +255,7 @@
             <a href="https://discord.com/invite/VmWuGeQzpt" class="game-button">Discord</a>
         </p>
     </div>
-    <button class="credit-button" data-href="/credits">Credits</button>
+    <button class="credit-button" id="creditBtn" data-href="/credits">Credits</button>
     <div id="cookie-banner" class="cookie-banner">
         <p>This website uses cookies to ensure you get the best experience. <a href="#" class="learnmore">Learn more</a></p>
         <a id="accept-cookies">Got it!</a>
@@ -295,6 +295,14 @@
                     iframe.style.display = 'block'; // Show iframe
                     content.style.display = 'none'; // Hide content
                 });
+            });
+        
+            // Handle credit button click
+            creditBtn.addEventListener('click', function(event) {
+                event.preventDefault();
+                iframe.src = this.getAttribute('data-href');
+                iframe.style.display = 'block';
+                content.style.display = 'none';
             });
         });
     </script>
