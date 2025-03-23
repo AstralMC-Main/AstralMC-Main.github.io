@@ -296,13 +296,13 @@
                 }, 500);
             });
         });
-
-          document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
             var menu = document.querySelector('.menu-links');
             var menuToggle = document.querySelector('.menu-toggle');
+            var iframe = document.getElementById('embed-frame');
         
             function toggleMenu(event) {
-                event.stopPropagation(); // Prevent click inside the toggle from closing immediately
+                event.stopPropagation(); // Prevent immediate closure
                 menu.classList.toggle('active');
             }
         
@@ -312,9 +312,17 @@
                 }
             }
         
+            // Detect clicks outside menu
             menuToggle.addEventListener('click', toggleMenu);
             document.addEventListener('click', closeMenu);
-        })
+        
+            // Detect when iframe gains focus (user clicked inside it)
+            iframe.addEventListener('load', function () {
+                iframe.contentWindow.addEventListener('mousedown', function () {
+                    menu.classList.remove('active');
+                });
+            });
+        });
 
     </script>
     <script>
