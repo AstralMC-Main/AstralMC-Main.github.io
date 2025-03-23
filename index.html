@@ -220,10 +220,12 @@
         }
         .navigation-bar img {
             transition: transform 0.3s ease-in-out;
+            border-radius: 50%; /* Ensures the glow appears circular */
         }
 
         .navigation-bar img:hover {
             transform: scale(1.1);
+            box-shadow: 0 0 15px 10px rgba(255, 215, 0, 0.5); /* Golden glow effect */
         }
         /* iFrame Styling */
         #embed-frame {
@@ -240,7 +242,9 @@
 </head>
 <body>
     <nav class="navigation-bar">
-        <img src="favicon.ico" alt="Website Icon" width="40" height="40" class="img">
+        <a>
+            <img src="favicon.ico" alt="Website Icon" width="40" height="40" class="img">
+        </a>
         <div class="menu-toggle" onclick="toggleMenu()">
             <div></div>
             <div></div>
