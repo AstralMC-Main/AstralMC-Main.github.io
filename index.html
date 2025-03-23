@@ -299,24 +299,38 @@
         document.addEventListener("DOMContentLoaded", function () {
             var menu = document.querySelector('.menu-links');
             var menuToggle = document.querySelector('.menu-toggle');
+            var menuItems = document.querySelectorAll('.menu-links a');
             var iframe = document.getElementById('embed-frame');
+            var settingKey = "dropdownAutoClose"; // The key for checking the setting in localStorage
+        
+            function shouldAutoCloseOnClick() {
+                return localStorage.getItem(settingKey) === "on"; // Check if the setting is enabled
+            }
         
             function toggleMenu(event) {
-                event.stopPropagation(); // Prevent immediate closure
+                event.stopPropagation();
                 menu.classList.toggle('active');
             }
         
             function closeMenu(event) {
                 if (!menu.contains(event.target) && !menuToggle.contains(event.target)) {
-                    menu.classList.remove('active');
+                    menu.classList.remove('active'); // Always close when clicking outside
                 }
             }
         
-            // Detect clicks outside menu
+            // Close menu when any menu item is clicked only if the setting is enabled
+            menuItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    if (shouldAutoCloseOnClick()) {
+                        menu.classList.remove('active');
+                    }
+                });
+            });
+        
             menuToggle.addEventListener('click', toggleMenu);
             document.addEventListener('click', closeMenu);
         
-            // Detect when iframe gains focus (user clicked inside it)
+            // Close dropdown when clicking inside the iframe, always
             iframe.addEventListener('load', function () {
                 iframe.contentWindow.addEventListener('mousedown', function () {
                     menu.classList.remove('active');
