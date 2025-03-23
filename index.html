@@ -297,10 +297,25 @@
             });
         });
 
-        function toggleMenu() {
+          document.addEventListener("DOMContentLoaded", function () {
             var menu = document.querySelector('.menu-links');
-            menu.classList.toggle('active');
-        }
+            var menuToggle = document.querySelector('.menu-toggle');
+        
+            function toggleMenu(event) {
+                event.stopPropagation(); // Prevent click inside the toggle from closing immediately
+                menu.classList.toggle('active');
+            }
+        
+            function closeMenu(event) {
+                if (!menu.contains(event.target) && !menuToggle.contains(event.target)) {
+                    menu.classList.remove('active');
+                }
+            }
+        
+            menuToggle.addEventListener('click', toggleMenu);
+            document.addEventListener('click', closeMenu);
+        })
+
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
