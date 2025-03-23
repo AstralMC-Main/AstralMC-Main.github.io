@@ -218,6 +218,13 @@
         .credit-button:hover {
             background-color: rgba(255, 255, 255, 0.5);
         }
+        .navigation-bar img {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .navigation-bar img:hover {
+            transform: scale(1.1);
+        }
         /* iFrame Styling */
         #embed-frame {
             width: 100vw;
@@ -233,7 +240,7 @@
 </head>
 <body>
     <nav class="navigation-bar">
-        <img src="favicon.ico" alt="Website Icon" width="40" height="40">
+        <img src="favicon.ico" alt="Website Icon" width="40" height="40" class="img">
         <div class="menu-toggle" onclick="toggleMenu()">
             <div></div>
             <div></div>
