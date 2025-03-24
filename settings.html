@@ -34,58 +34,60 @@
             const toggleButton = document.getElementById("toggleButton");
             const banner = document.getElementById("banner");
             const closeBannerBtn = document.getElementById("closeBanner");
-
+    
             // Second Toggle Button Variables
             const toggleAutoCloseButton = document.getElementById("toggleAutoCloseButton");
-
-            // Retrieve stored states for first toggle
-            const savedToggleState = localStorage.getItem("toggleState");
-            const savedBannerState = localStorage.getItem("bannerHidden");
-
-            if (savedToggleState === "on") {
-                toggleButton.checked = true;
-                if (savedBannerState !== "true") {
-                    banner.style.display = "flex";
-                }
-            } else {
-                toggleButton.checked = false;
-                banner.style.display = "none";
-            }
-
-            // Retrieve stored states for second toggle (Auto Close)
-            const savedAutoCloseState = localStorage.getItem("toggleAutoClose");
-
-            if (savedAutoCloseState === "on") {
-                toggleAutoCloseButton.checked = true;
-            } else {
-                toggleAutoCloseButton.checked = false;
-            }
-
-            // Event listener for first toggle button
-            toggleButton.addEventListener("change", function () {
-                if (toggleButton.checked) {
-                    localStorage.setItem("toggleState", "on");
-                    localStorage.removeItem("bannerHidden");
-                    banner.style.display = "flex";
+    
+            // Retrieve stored states only if cookies are accepted
+            if (cookiesAccepted) {
+                const savedToggleState = localStorage.getItem("toggleState");
+                const savedBannerState = localStorage.getItem("bannerHidden");
+    
+                if (savedToggleState === "on") {
+                    toggleButton.checked = true;
+                    if (savedBannerState !== "true") {
+                        banner.style.display = "flex";
+                    }
                 } else {
-                    localStorage.setItem("toggleState", "off");
+                    toggleButton.checked = false;
                     banner.style.display = "none";
                 }
-            });
-
-            // Event listener for second toggle button (Auto Close)
-            toggleAutoCloseButton.addEventListener("change", function () {
-                if (toggleAutoCloseButton.checked) {
-                    localStorage.setItem("toggleAutoClose", "on");
-                } else {
-                    localStorage.setItem("toggleAutoClose", "off");
+    
+                const savedAutoCloseState = localStorage.getItem("toggleAutoClose");
+                toggleAutoCloseButton.checked = savedAutoCloseState === "on";
+            }
+    
+            // Event listener for first toggle button
+            toggleButton.addEventListener("change", function () {
+                if (cookiesAccepted) {
+                    if (toggleButton.checked) {
+                        localStorage.setItem("toggleState", "on");
+                        localStorage.removeItem("bannerHidden");
+                        banner.style.display = "flex";
+                    } else {
+                        localStorage.setItem("toggleState", "off");
+                        banner.style.display = "none";
+                    }
                 }
             });
-
+    
+            // Event listener for second toggle button (Auto Close)
+            toggleAutoCloseButton.addEventListener("change", function () {
+                if (cookiesAccepted) {
+                    if (toggleAutoCloseButton.checked) {
+                        localStorage.setItem("toggleAutoClose", "on");
+                    } else {
+                        localStorage.setItem("toggleAutoClose", "off");
+                    }
+                }
+            });
+    
             // Close banner manually for first toggle
             closeBannerBtn.addEventListener("click", function () {
                 banner.style.display = "none";
-                localStorage.setItem("bannerHidden", "true");
+                if (cookiesAccepted) {
+                    localStorage.setItem("bannerHidden", "true");
+                }
             });
         });
     </script>
