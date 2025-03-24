@@ -15,9 +15,25 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      text-align: center;
+      text-align: center;   scrollbar-width: thin; /* Firefox */
+      scrollbar-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.6); /* Firefox */
+    } 
+    /* WebKit (Chrome, Edge, Safari) */
+    ::-webkit-scrollbar {
+      width: 10px; /* Adjust width */
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
     }
 
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.7);
+    }
     /* Add a background color with some transparency to make text more visible */
     .content {
       background-color: rgba(0, 0, 0, 0.6);
