@@ -245,4 +245,5 @@ input:checked + .toggle-slider:before {
     color: white;
     font-size: 20px;
     cursor: pointer;
+    margin-top: 10vh;
 }
