@@ -235,7 +235,6 @@ input:checked + .toggle-slider:before {
     text-align: center;
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 /* Close Button */
