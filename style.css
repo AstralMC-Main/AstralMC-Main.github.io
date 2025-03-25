@@ -235,6 +235,7 @@ input:checked + .toggle-slider:before {
     text-align: center;
     display: flex;
     align-items: center;
+    margin-top: 10vh;
 }
 
 /* Close Button */
@@ -244,5 +245,4 @@ input:checked + .toggle-slider:before {
     color: white;
     font-size: 20px;
     cursor: pointer;
-    margin-top: 10vh;
 }
