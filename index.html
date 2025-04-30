@@ -238,6 +238,12 @@
             left: 0;
             z-index: 999; /* Ensure it overlays everything */
         }
+        #embed-overlay {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 2000;
+        }
     </style>
 </head>
 <body>
@@ -261,6 +267,7 @@
     
    <!-- iFrame for embedding pages -->
     <iframe id="embed-frame"></iframe>
+    <iframe id=embed-overlay"></iframe>
     <div class="content">
         <h1>Astral MC</h1>
         <p>This is a work in progress</p>
@@ -364,6 +371,11 @@
             });
         });
     </script>
-
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+      const iframe = document.getElementById('myFrame');
+      iframe.src = 'https://astralmc-main.github.io/discord'; // Replace with your target URL
+    });
+    </script>
 </body>
 </html>
