@@ -103,6 +103,7 @@ body {
   border: none;
   cursor: pointer;
   transition: background 0.3s;
+  text-align: left;
 }
 
 .channel:hover {
@@ -270,6 +271,7 @@ body {
 
 <!-- CHAT POPUP -->
 <div id="chatPopup">
+    <div id="account-indicator" style="position: absolute; bottom: 0; left: 0; right: 0;"></div>
 <div id="chatContent">
 <div id="sidebar">
     <button id="back-button" style="display:none;" class="back-button">← Back</button>
@@ -304,7 +306,10 @@ const chatWidgetButton = document.getElementById('chatWidgetButton');
 const sendButton = document.getElementById('sendButton');
 const pendingMessages = new Set(); // Track client-side message IDs
 const deletedMessages = new Set(); // Track deleted message IDs
-
+const existingToken = localStorage.getItem('discord_token');
+if (existingToken) {
+  fetchUserInfo(existingToken);
+}
 let currentGuild = null;
 let currentChannel = null;
 let lastMessage = null;
@@ -693,10 +698,51 @@ function handleRedirect() {
     if (existingToken) {
       loginButton.style.display = 'none';
       logoutButton.style.display = 'block';
+      fetchUserInfo(token);
     }
   }
 }
 handleRedirect();
+async function fetchUserInfo(token) {
+  const res = await fetch('https://discord.com/api/users/@me', {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (res.ok) {
+    const user = await res.json();
+    localStorage.setItem('discord_user', JSON.stringify(user));
+    renderUserIndicator(user);
+  } else {
+    console.error('Failed to fetch user info');
+  }
+}
+//-----
+function renderUserIndicator(user) {
+  const container = document.getElementById('account-indicator');
+  const avatarUrl = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
+
+  container.innerHTML = `
+    <div style="
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background: #2c2f33;
+      color: white;
+      font-family: sans-serif;
+      border-top: 1px solid #444;
+    ">
+      <img src="${avatarUrl}" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;">
+      <div>
+        <div><strong>${user.username}</strong></div>
+        ${user.global_name ? `<div style="font-size: 12px; color: #aaa;">${user.global_name}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
 
 </script>
 
