@@ -1,451 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Live Chat Widget (Discord OAuth2)</title>
-  <style>
-    /* BASIC STYLES */
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      background: transparent;
-      overflow: hidden;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
+<meta charset="UTF-8" />
+<title>Live Chat Widget (Discord OAuth2)</title>
+<style>
+/* BASIC STYLES */
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
 
-    /* CHAT BUTTON */
-    #chatWidgetButton {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background-color: #5865F2;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      overflow: hidden;
-      padding: 0;
-      transition: all 0.3s ease;
-    }
+/* CHAT BUTTON */
+#chatWidgetButton {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #5865F2;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  overflow: hidden;
+  padding: 0;
+  transition: all 0.3s ease;
+}
 
-    #discordIconImg {
-      width: 53%;
-      height: 40%;
-      margin: auto;
-      transition: all 0.3s ease;
-    }
+#discordIconImg {
+  width: 53%;
+  height: 40%;
+  margin: auto;
+  transition: all 0.3s ease;
+}
 
-    /* CHAT POPUP */
-    #chatPopup {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      background: #5865F2;
-      border-radius: 50%;
-      z-index: 999;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      display: flex;
-      flex-direction: column;
-      transition: all 0.5s ease;
-    }
+/* CHAT POPUP */
+#chatPopup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: #5865F2;
+  border-radius: 50%;
+  z-index: 999;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.5s ease;
+}
 
-    #chatPopup.open {
-      width: 90vw;
-      height: 90vh;
-      background: #36393f;
-      border-radius: 10px;
-    }
+#chatPopup.open {
+  width: 90vw;
+  height: 90vh;
+  background: #36393f;
+  border-radius: 10px;
+}
 
-    /* CHAT CONTENT */
-    #chatContent {
-      display: none;
-      height: 100%;
-      width: 100%;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-      flex-direction: row;
-    }
+/* CHAT CONTENT */
+#chatContent {
+  display: none;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  flex-direction: row;
+}
 
-    #chatContent.show {
-      display: flex;
-      opacity: 1;
-    }
+#chatContent.show {
+  display: flex;
+  opacity: 1;
+}
 
-    #sidebar {
-      width: 200px;
-      background: #2f3136;
-      padding: 10px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      border-right: 1px solid #40444b;
-      overflow-y: auto;
-      max-height: 100%;
-    }
+#sidebar {
+  width: 12%;
+  background: #2f3136;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-right: 1px solid #40444b;
+  overflow-y: scroll;
+  scrollbar-color: gray transparent;
+  max-height: 100%;
+}
 
-    .channel {
-      color: #b9bbbe;
-      font-size: 14px;
-      padding: 8px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+.channel {
+  color: #b9bbbe;
+  background-color: #2f3136;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
 
-    .channel:hover {
-      background: #40444b;
-    }
+.channel:hover {
+  background-color: #424549;
+  border: none;
+}
 
-    .channel.active {
-      background: #5865f2;
-      color: white;
-    }
+.channel.active {
+  background-color: #5865f2;
+  color: white;
+  border: none;
+}
 
-    #mainArea {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+#mainArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-    #chat {
-      flex: 1;
-      overflow-y: auto;
-      background: #2f3136;
-      padding: 10px;
-    }
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  background: #2f3136;
+  padding: 10px;
+}
 
-    .message {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
+.message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
 
-    .avatar {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      margin-right: 8px;
-      flex-shrink: 0;
-    }
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
 
-    .messageContent {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      word-break: break-word;
-      max-width: calc(100% - 40px);
-    }
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  word-break: break-word;
+  max-width: calc(100% - 40px);
+}
 
-    .header {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
+.header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
-    .username {
-      font-weight: bold;
-      font-size: 12px;
-      color: #fff;
-      margin-bottom: 2px;
-    }
+.username {
+  font-weight: bold;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 2px;
+}
 
-    .timestamp {
-      color: #72767d;
-      font-size: 10px;
-    }
+.timestamp {
+  color: #72767d;
+  font-size: 12px;
+}
 
-    .text {
-      color: #dcddde;
-      font-size: 12px;
-      word-break: break-word;
-      text-align: left;
-    }
+.text {
+  color: #dcddde;
+  font-size: 14px;
+  word-break: break-word;
+  text-align: left;
+}
 
-    #inputArea {
-      background: #40444b;
-      padding: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+#inputArea {
+  background: #40444b;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-    #messageInput {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 6px;
-      background-color: #2f3136;
-      color: #dcddde;
-      font-size: 12px;
-    }
+#messageInput {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2f3136;
+  color: #dcddde;
+  font-size: 12px;
+}
 
-    #sendButton {
-      background-color: #5865f2;
-      border: none;
-      border-radius: 7px;
-      color: #fff;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 8px 10px;
-      width: 40px;
-      height: 40px;
-      transition: background-color 0.3s;
-    }
+#sendButton {
+  background-color: #5865f2;
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 10px;
+  width: 40px;
+  height: 40px;
+  transition: background-color 0.3s;
+}
 
-    #sendButton:hover {
-      background-color: #4752c4;
-    }
+#sendButton:hover {
+  background-color: #4752c4;
+}
 
-    #loginButton, #logoutButton {
-      background-color: #5865f2;
-      border: none;
-      border-radius: 5px;
-      color: #fff;
-      font-size: 12px;
-      cursor: pointer;
-      padding: 8px 10px;
-      width: 100%;
-      margin-top: 5px;
-      transition: background-color 0.3s;
-    }
+#loginButton, #logoutButton {
+  background-color: #5865f2;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 8px 10px;
+  width: 100%;
+  margin-top: 5px;
+  transition: background-color 0.3s;
+}
 
-    #loginButton:hover, #logoutButton:hover {
-      background-color: #4752c4;
-    }
+#loginButton:hover, #logoutButton:hover {
+  background-color: #4752c4;
+}
 
-    .serverload {
-      color: #5865f2;
-    }
-  </style>
+.serverload {
+  color: #5865f2;
+}
+#sidebar hr {
+  margin: 10px 0;
+  border-color: #40444b;
+}
+.back-button {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: #5865f2;
+  color: #fff;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  width: 10%;
+}
+.back-button:hover {
+  background-color: #4752c4;
+}
+.mention {
+  background-color: #3a3c40;
+  color: #00b0f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+</style>
 </head>
 <body>
 
 <!-- CHAT BUTTON (outside popup) -->
 <button id="chatWidgetButton">
-  <img id="discordIconImg" src="https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/refs/heads/main/Discord_Symbol_White.png" alt="Discord Logo">
+<img id="discordIconImg" src="https://raw.githubusercontent.com/AstralMC-Main/AstralMC-Main.github.io/refs/heads/main/Discord_Symbol_White.png" alt="Discord Logo">
 </button>
 
 <!-- CHAT POPUP -->
 <div id="chatPopup">
-  <div id="chatContent">
-    <div id="sidebar"></div>
-    <div id="mainArea">
-      <div id="chat"></div>
-      <div id="inputArea">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendButton">➤</button>
-      </div>
-      <button id="loginButton" href="https://discord.com/oauth2/authorize?client_id=1366498578822070323&redirect_uri=http%3A%2F%2F28.ip.gl.ply.gg%3A4367%2Fcallback&response_type=token&scope=identify%20guilds">Login with Discord</button>
-      <button id="logoutButton" style="display:none;">Logout</button>
-    </div>
+<div id="chatContent">
+<div id="sidebar">
+    <button id="back-button" style="display:none;" class="back-button">← Back</button>
+</div>
+<div id="mainArea">
+  <div id="chat"></div>
+  <div id="inputArea">
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendButton">➤</button>
   </div>
+  <button id="loginButton">Login with Discord</button>
+  <button id="logoutButton" style="display:none;">Logout</button>
+</div>
+</div>
 </div>
 
 <script>
-  const backendUrl = 'https://backendserver2468.loca.lt';
-  const clientId = '1366498578822070323';
-  const redirectUri = encodeURIComponent('https://backendserver2468.loca.lt/callback');
-  const scope = encodeURIComponent('identify guilds');
-  const responseType = 'code';
+const backendUrl = 'http://28.ip.gl.ply.gg:4367';
+const clientId = '1366498578822070323';
+const redirectUri = encodeURIComponent('https://astralmc-main.github.io/discord');
+const scope = encodeURIComponent('identify guilds');
+const responseType = 'token';
 
-  const chatPopup = document.getElementById('chatPopup');
-  const chatContent = document.getElementById('chatContent');
-  const messageInput = document.getElementById('messageInput');
-  const chat = document.getElementById('chat');
-  const loginButton = document.getElementById('loginButton');
-  const logoutButton = document.getElementById('logoutButton');
-  const chatWidgetButton = document.getElementById('chatWidgetButton');
-  const sendButton = document.getElementById('sendButton');
+const chatPopup = document.getElementById('chatPopup');
+const chatContent = document.getElementById('chatContent');
+const messageInput = document.getElementById('messageInput');
+const chat = document.getElementById('chat');
+const loginButton = document.getElementById('loginButton');
+const logoutButton = document.getElementById('logoutButton');
+const chatWidgetButton = document.getElementById('chatWidgetButton');
+const sendButton = document.getElementById('sendButton');
+const pendingMessages = new Set(); // Track client-side message IDs
+const deletedMessages = new Set(); // Track deleted message IDs
 
-  let currentGuild = null;
-  let currentChannel = null;
+let currentGuild = null;
+let currentChannel = null;
+let lastMessage = null;
+let currentUserId = null;
 
-  chatWidgetButton.addEventListener('click', () => {
-    if (!chatPopup.classList.contains('open')) {
-      chatPopup.classList.add('open');
-      chatWidgetButton.style.display = 'none';
-      setTimeout(() => {
-        chatContent.classList.add('show');
-        loadServers();
-      }, 300);
-    }
-  });
+chatWidgetButton.addEventListener('click', () => {
+  if (!chatPopup.classList.contains('open')) {
+    chatPopup.classList.add('open');
+    chatWidgetButton.style.display = 'none';
 
-  loginButton.addEventListener('click', () => {
-    const discordOauthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
-    window.location.href = discordOauthUrl;
-  });
+    setTimeout(() => {
+      chatContent.classList.add('show');
 
-  logoutButton.addEventListener('click', () => {
-    localStorage.removeItem('discord_token');
-    logoutButton.style.display = 'none';
-    loginButton.style.display = 'block';
-  });
-
-  sendButton.addEventListener('click', async () => {
-    const message = messageInput.value.trim();
-    if (!message || !currentChannel) return;
-    
-  messageInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // prevent newline
-      sendButton.click(); // simulate send button click
-    }
-  });
-
-    sendButton.disabled = true;
-    try {
-      const response = await fetch(`${backendUrl}/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          channelId: currentChannel,
-          message
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        messageInput.value = '';
-        loadMessages(currentGuild, currentChannel);
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'getGuilds' }));
       } else {
-        console.error('Failed to send message:', result.error);
+        socket.addEventListener('open', () => {
+          socket.send(JSON.stringify({ type: 'getGuilds' }));
+        }, { once: true });
       }
-    } catch (err) {
-      console.error('Send error:', err);
-    }
-    sendButton.disabled = false;
-  });
-
-  function handleRedirect() {
-    const hash = window.location.hash;
-    if (hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.slice(1));
-      const token = params.get('access_token');
-      if (token) {
-        localStorage.setItem('discord_token', token);
-        loginButton.style.display = 'none';
-        logoutButton.style.display = 'block';
-      }
-    }
+    }, 300);
   }
-  handleRedirect();
-  
-  messageInput.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendButton.click();
-    }
-  });
+});
 
-  async function loadServers() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.innerHTML = '<div class="serverload">Loading servers...</div>';
-    try {
-      const response = await fetch(`${backendUrl}/guilds`);
-      const servers = await response.json();
-      sidebar.innerHTML = '';
+loginButton.addEventListener('click', () => {
+  const discordOauthUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
+  window.location.href = discordOauthUrl;
+});
 
-      servers.forEach(server => {
-        const serverElement = document.createElement('div');
-        serverElement.classList.add('channel');
-        serverElement.innerText = server.name;
-        serverElement.addEventListener('click', () => {
-          loadChannels(server.id);
-          currentGuild = server.id;
-        });
-        sidebar.appendChild(serverElement);
-      });
-    } catch (err) {
-      console.error('Failed to load servers', err);
-    }
+logoutButton.addEventListener('click', () => {
+  localStorage.removeItem('discord_token');
+  logoutButton.style.display = 'none';
+  loginButton.style.display = 'block';
+});
+
+sendButton.addEventListener('click', () => {
+  const message = messageInput.value.trim();
+  if (!message || !currentChannel) return;
+
+  // Generate a temp ID (you can also use a real UUID)
+  const tempId = `temp-${Date.now()}`;
+  pendingMessages.add(tempId);
+
+  socket.send(JSON.stringify({
+    type: 'chat',
+    content: message,
+    channelId: currentChannel,
+    tempId // Optional: send tempId if backend can echo it
+  }));
+
+  messageInput.value = '';
+});
+
+messageInput.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendButton.click();
   }
+});
 
-  async function loadChannels(guildId) {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.innerHTML = '<div class="serverload">Loading channels...</div>';
-    try {
-      const response = await fetch(`${backendUrl}/channels/${guildId}`);
-      const channels = await response.json();
-      sidebar.innerHTML = '';
-
-      channels.forEach(channel => {
-        const channelElement = document.createElement('div');
-        channelElement.classList.add('channel');
-        channelElement.innerText = `# ${channel.name}`;
-        channelElement.addEventListener('click', () => {
-          currentChannel = channel.id;
-          loadMessages(currentGuild, currentChannel);
-          startPolling(); // begin polling new messages
-        });
-        sidebar.appendChild(channelElement);
-      });
-    } catch (err) {
-      console.error('Failed to load channels', err);
+function handleRedirect() {
+  const hash = window.location.hash;
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if (token) {
+      localStorage.setItem('discord_token', token);
+      loginButton.style.display = 'none';
+      logoutButton.style.display = 'block';
     }
-  }
-  let lastMessageId = null;
-  let pollInterval = null;
-  
-  async function loadMessages(guildId, channelId, initialLoad = true) {
-    try {
-      const response = await fetch(`${backendUrl}/messages/${channelId}${lastMessageId ? `?after=${lastMessageId}` : ''}`);
-      const messages = await response.json();
-
-      const newMessages = lastMessageId
-        ? messages.filter(msg => msg.id > lastMessageId)
-        : messages;
-      
-    if (newMessages.length > 0) {
-      const isAtBottom = chat.scrollTop + chat.clientHeight === chat.scrollHeight;
-
-      newMessages.forEach(addMessageToChat);
-      chat.scrollTop = chat.scrollHeight;
-      lastMessageId = newMessages[newMessages.length - 1].id;
-      if (isAtBottom) {
-        chat.scrollTop = chat.scrollHeight;
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load messages', err);
   }
 }
-  function startPolling() {
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(() => {
-      loadMessages(currentGuild, currentChannel, false);
-    }, 100); // every 0.1 seconds
+handleRedirect();
+
+const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+const port = 3000;
+const socket = new WebSocket(`${protocol}://28.ip.gl.ply.gg:4367`);
+
+socket.onopen = () => {
+  console.log('WebSocket connected');
+  const token = localStorage.getItem('discord_token');
+  if (token) {
+    socket.send(JSON.stringify({ type: 'auth', token }));
+  }
+};
+socket.onerror = (e) => console.error('WebSocket error:', e);
+socket.onclose = () => console.warn('WebSocket connection closed');
+function getAvatarUrl(user) {
+  if (!user.avatar) {
+    const defaultIndex = BigInt(user.id) % 5n;
+    return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
   }
 
-  function stopPolling() {
-    if (pollInterval) clearInterval(pollInterval);
-  }
-let lastAuthorId = null;
-let lastMessageTime = 0;
+  // If avatar already looks like a full URL, just return it
+  if (user.avatar.startsWith('http')) return user.avatar;
 
-let lastMessage = null;
-
-function addMessageToChat(message) {
+  // Otherwise, construct the URL properly
+  const format = user.avatar.startsWith('a_') ? 'gif' : 'png';
+  return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${format}?size=64`;
+}
+function parseMentions(text) {
+  const escaped = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return escaped.replace(/&lt;@!?(\d+)&gt;/g, '<span class="mention">@$1</span>');
+}
+function addMessageToChat(message, fromSelf = false) {
   let currentTime;
   try {
     currentTime = new Date(message.timestamp);
-    if (isNaN(currentTime)) throw new Error('Invalid Date');
-  } catch (e) {
-    console.warn('Invalid timestamp:', message.timestamp);
+    if (isNaN(currentTime)) throw new Error();
+  } catch {
     currentTime = new Date();
   }
 
@@ -456,25 +424,55 @@ function addMessageToChat(message) {
     lastTime &&
     (currentTime - lastTime < 7 * 60 * 1000);
 
+  const mentionCache = {};
+
+  function parseMentions(text, messageAuthor) {
+    const escaped = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    return escaped.replace(/&lt;@!?(\d+)&gt;/g, (match, userId) => {
+      if (mentionCache[userId]) {
+        return `<span class="mention">@${mentionCache[userId]}</span>`;
+      }
+
+      if (messageAuthor && messageAuthor.id === userId) {
+        mentionCache[userId] = messageAuthor.username;
+        return `<span class="mention">@${messageAuthor.username}</span>`;
+      }
+
+      fetch(`https://discord.com/api/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('discord_token')}`
+        }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .then(user => {
+        if (user && user.username) {
+          mentionCache[userId] = user.username;
+          document.querySelectorAll('.text').forEach(elem => {
+            elem.innerHTML = parseMentions(elem.innerText, messageAuthor);
+          });
+        }
+      });
+
+      return `<span class="mention">@${userId}</span>`;
+    });
+  }
+
   if (shouldGroup) {
     const lastMsgElem = chat.lastElementChild;
     const lastText = document.createElement('div');
     lastText.classList.add('text');
-    lastText.innerText = message.content;
+    lastText.innerHTML = parseMentions(message.content, message.author);
+    lastText.id = `msg-${message.id}`; // Add id for future edits
     lastMsgElem.querySelector('.messageContent').appendChild(lastText);
   } else {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
-
+    if (fromSelf) messageElement.classList.add('from-self');
+    messageElement.id = `msg-${message.id}`;
     const avatar = document.createElement('img');
     avatar.classList.add('avatar');
-  
-    if (message.author?.avatar) {
-      avatar.src = `https://cdn.discordapp.com/avatars/${message.author.id}/${message.author.avatar}.png`;
-    } else {
-      avatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png'; // fallback avatar
-    }
-    messageElement.appendChild(avatar);
+    avatar.src = getAvatarUrl(message.author);
 
     const content = document.createElement('div');
     content.classList.add('messageContent');
@@ -488,26 +486,161 @@ function addMessageToChat(message) {
 
     const timestamp = document.createElement('span');
     timestamp.classList.add('timestamp');
-    timestamp.innerText = currentTime.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    header.appendChild(username);
-    header.appendChild(timestamp);
+    timestamp.innerText = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const text = document.createElement('div');
     text.classList.add('text');
-    text.innerText = message.content;
+    text.innerHTML = parseMentions(message.content, message.author);
+    text.id = `msg-${message.id}`; // Add id for edits/deletes
 
+    header.appendChild(username);
+    header.appendChild(timestamp);
     content.appendChild(header);
     content.appendChild(text);
+
+    messageElement.appendChild(avatar);
     messageElement.appendChild(content);
     chat.appendChild(messageElement);
   }
 
   lastMessage = message;
+  chat.scrollTop = chat.scrollHeight;
 }
+
+
+socket.onmessage = (event) => {
+  let data;
+  try {
+    data = JSON.parse(event.data);
+  } catch (err) {
+    console.error("Failed to parse server message", event.data);
+    return;
+  }
+  if (data.type === 'authSuccess') {
+    currentUserId = data.user.id;
+    return;
+  }
+  const sidebar = document.getElementById('sidebar');
+  const backButton = document.getElementById('back-button');
+
+  // Handle guild list
+  if (data.type === 'guildList') {
+    sidebar.innerHTML = '';
+
+    const backButton = document.createElement('button');
+    backButton.id = 'back-button';
+    backButton.textContent = '← Back';
+    backButton.className = 'back-button';
+    backButton.style.display = 'none';
+    backButton.onclick = () => {
+      socket.send(JSON.stringify({ type: 'requestGuildList' }));
+    };
+    sidebar.appendChild(backButton);
+
+    data.guilds.forEach(g => {
+      const btn = document.createElement('button');
+      btn.textContent = g.name;
+      btn.className = 'channel';
+      btn.onclick = () => {
+        currentGuild = g.id;
+        socket.send(JSON.stringify({ type: 'selectGuild', guildId: g.id }));
+      };
+      sidebar.appendChild(btn);
+    });
+    return;
+  }
+
+  // Handle channel list
+  if (data.type === 'channelList') {
+    sidebar.innerHTML = '';
+
+    const backButton = document.createElement('button');
+    backButton.id = 'back-button';
+    backButton.textContent = '← Back';
+    backButton.className = 'back-button';
+    backButton.style.display = 'block';
+    backButton.onclick = () => {
+      socket.send(JSON.stringify({ type: 'requestGuildList' }));
+    };
+    sidebar.appendChild(backButton);
+
+    const hr = document.createElement('hr');
+    hr.style.border = '1px solid #40444b';
+    sidebar.appendChild(hr);
+
+    data.channels.forEach(c => {
+      const btn = document.createElement('button');
+      btn.textContent = `#${c.name}`;
+      btn.className = 'channel';
+      btn.onclick = () => {
+        currentChannel = c.id;
+        chat.innerHTML = '';
+        lastMessage = null;
+        socket.send(JSON.stringify({ type: 'selectChannel', guildId: currentGuild, channelId: c.id }));
+        socket.send(JSON.stringify({ type: 'getMessages', channelId: c.id }));
+      };
+      sidebar.appendChild(btn);
+    });
+    return;
+  }
+
+  // Handle message edits
+  if (data.type === 'edit') {
+    const msg = document.getElementById(`msg-${data.id}`);
+    if (msg) {
+      const target = msg.querySelector('.text');
+      if (target) {
+        target.innerHTML = parseMentions(data.content);
+        target.innerHTML += ' <span style="color: #72767d; font-size: 12px;">(edited)</span>';
+      }
+    }
+    return;
+  }
+
+  // Handle message deletions
+    if (data.type === 'delete') {
+      deletedMessages.add(data.id);
+      const msg = document.getElementById(`msg-${data.id}`);
+      if (msg) msg.remove();
+    
+      // ⬇️ NEW: Remove the tempId from pendingMessages if it's there
+        const isFromWidget = data.tempId && pendingMessages.has(data.tempId);
+        
+        if (isFromWidget) {
+          pendingMessages.delete(data.tempId);
+          // Optional: update UI to mark as delivered
+        }
+        
+        // Don’t add deleted messages
+        if (deletedMessages.has(data.id)) {
+          return;
+        }
+        
+        // Finally, show the message
+        addMessageToChat(data);
+    
+      return;
+    }
+  // Handle new/old messages
+    if (deletedMessages.has(data.id)) return;
+    
+    const fromSelf = data.author?.id === currentUserId;
+    
+    if (data.tempId && pendingMessages.has(data.tempId)) {
+      pendingMessages.delete(data.tempId);
+      fromSelf = true;
+    } else if (currentUserId && data.author?.id === currentUserId) {
+      // Only treat as self if not deleted and no tempId
+      fromSelf = false; // Avoid misidentifying same-user messages from other sessions
+    }
+    
+    addMessageToChat(data, fromSelf);
+};
+
+document.getElementById('back-button').onclick = () => {
+  socket.send(JSON.stringify({ type: 'requestGuildList' }));
+};
 </script>
+
 </body>
 </html>
