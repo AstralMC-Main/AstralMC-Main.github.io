@@ -288,6 +288,7 @@ body {
 
 <script>
 const backendUrl = 'https://backendserver2468.loca.lt';
+const socketUrl = 'backendserver2468.loca.lt';
 const clientId = '1366498578822070323';
 const redirectUri = encodeURIComponent('https://astralmc-main.github.io/discord');
 const scope = encodeURIComponent('identify guilds');
@@ -308,6 +309,34 @@ let currentGuild = null;
 let currentChannel = null;
 let lastMessage = null;
 let currentUserId = null;
+//-------------------------------------------------------
+const urlParams = new URLSearchParams(window.location.search);
+const code = urlParams.get('code');
+
+if (code) {
+  // Send the code to your backend for verification
+  fetch('https://backendserver2468.loca.lt/auth/discord/callback', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ code })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.user) {
+      console.log('Logged in as:', data.user);
+      // You can now show the user info or store it
+      document.getElementById('username').textContent = data.user.username;
+      // Clear the URL code parameter for cleanliness
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      console.error('OAuth2 failed:', data);
+    }
+  })
+  .catch(err => console.error('Error:', err));
+}
+//------------------------------------------------------------
 
 chatWidgetButton.addEventListener('click', () => {
   if (!chatPopup.classList.contains('open')) {
@@ -380,7 +409,7 @@ handleRedirect();
 
 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 const port = 3000;
-const socket = new WebSocket(`${protocol}://backendserver2468.loca.lt`);
+const socket = new WebSocket(`${protocol}://${socketUrl}`);
 
 socket.onopen = () => {
   console.log('WebSocket connected');
@@ -640,6 +669,35 @@ socket.onmessage = (event) => {
 document.getElementById('back-button').onclick = () => {
   socket.send(JSON.stringify({ type: 'requestGuildList' }));
 };
+function handleRedirect() {
+  const hash = window.location.hash;
+
+  if (hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+
+    if (token) {
+      // Store token
+      localStorage.setItem('discord_token', token);
+
+      // Clean the URL by removing the hash part
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+
+      // Update UI
+      loginButton.style.display = 'none';
+      logoutButton.style.display = 'block';
+    }
+  } else {
+    // Check for existing token on load
+    const existingToken = localStorage.getItem('discord_token');
+    if (existingToken) {
+      loginButton.style.display = 'none';
+      logoutButton.style.display = 'block';
+    }
+  }
+}
+handleRedirect();
+
 </script>
 
 </body>
