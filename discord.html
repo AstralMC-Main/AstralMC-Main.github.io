@@ -287,7 +287,7 @@ body {
 </div>
 
 <script>
-const backendUrl = 'http://28.ip.gl.ply.gg:4367';
+const backendUrl = 'https://backendserver2468.loca.lt';
 const clientId = '1366498578822070323';
 const redirectUri = encodeURIComponent('https://astralmc-main.github.io/discord');
 const scope = encodeURIComponent('identify guilds');
@@ -380,7 +380,7 @@ handleRedirect();
 
 const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 const port = 3000;
-const socket = new WebSocket(`${protocol}://28.ip.gl.ply.gg:4367`);
+const socket = new WebSocket(`${protocol}://backendserver2468.loca.lt`);
 
 socket.onopen = () => {
   console.log('WebSocket connected');
