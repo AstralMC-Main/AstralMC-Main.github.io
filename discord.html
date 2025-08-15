@@ -1,221 +1,325 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Discord Chat</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            display: flex;
-            height: 100vh;
-        }
-        #sidebar {
-            width: 70px;
-            background: #2f3136;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-y: auto;
-        }
-        .server-icon {
-            width: 50px;
-            height: 50px;
-            background: #36393f;
-            border-radius: 25px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        #channels {
-            width: 200px;
-            background: #202225;
-            color: white;
-            padding: 10px;
-            overflow-y: auto;
-        }
-        #chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        #messages {
-            flex: 1;
-            background: #36393f;
-            color: white;
-            padding: 10px;
-            overflow-y: auto;
-        }
-        #input {
-            display: flex;
-            padding: 10px;
-            background: #2f3136;
-        }
-        #input input {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 5px;
-        }
-        #input button {
-            margin-left: 8px;
-            padding: 8px 12px;
-        }
-        #topbar {
-            background: #23272a;
-            color: white;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        button {
-            cursor: pointer;
-        }
-    </style>
+<meta charset="UTF-8" />
+<title>AstralMC Discord Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root { --bg:#1e1f22; --bg2:#2b2d31; --panel:#232428; --accent:#5865f2; --text:#eee; --muted:#9ca3af; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; height:100vh; display:flex; }
+  /* layout */
+  #servers { width:80px; background:#202225; overflow:auto; padding:10px 6px; }
+  #channels { width:240px; background:var(--panel); overflow:auto; padding:10px; }
+  #main { flex:1; display:flex; flex-direction:column; }
+  #topbar { background:var(--bg2); padding:10px 12px; display:flex; align-items:center; gap:10px; justify-content:space-between; border-bottom:1px solid #0006; }
+  #status { font-size:14px; color:var(--muted); }
+  #messages { flex:1; overflow:auto; padding:12px; }
+  #composer { display:flex; gap:8px; padding:10px; background:var(--bg2); border-top:1px solid #0006; }
+  #composer input { flex:1; padding:10px; border-radius:8px; border:1px solid #0000; background:#2a2c31; color:var(--text); }
+  #composer button, .btn { padding:8px 12px; border-radius:8px; border:none; color:white; background:var(--accent); cursor:pointer; }
+  .btn.secondary { background:#3b3d44; }
+  .btn:disabled { opacity:.6; cursor:not-allowed; }
+  /* servers */
+  .server { width:56px; height:56px; border-radius:50%; background:#36393f; display:flex; align-items:center; justify-content:center; margin:8px 0; cursor:pointer; border:2px solid transparent; user-select:none; }
+  .server.active { border-color:var(--accent); }
+  .server img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  /* channels */
+  .chan { padding:6px 8px; border-radius:6px; cursor:pointer; color:var(--muted); }
+  .chan.active { background:#2f3136; color:var(--text); }
+  /* messages */
+  .msg { margin-bottom:10px; }
+  .author { font-weight:600; margin-right:6px; }
+  .time { color:var(--muted); font-size:12px; margin-left:6px; }
+  #empty { color:var(--muted); padding:12px; }
+</style>
 </head>
 <body>
-    <div id="sidebar"></div>
-    <div id="channels"></div>
-    <div id="chat">
-        <div id="topbar">
-            <span id="status">Not logged in</span>
-            <div>
-                <button id="loginBtn">Login</button>
-                <button id="logoutBtn" style="display:none;">Logout</button>
-            </div>
-        </div>
-        <div id="messages"></div>
-        <div id="input">
-            <input type="text" id="msgInput" placeholder="Type a message..." />
-            <button id="sendBtn">Send</button>
-        </div>
+
+<!-- Left: servers -->
+<div id="servers"></div>
+
+<!-- Middle: channels -->
+<div id="channels"></div>
+
+<!-- Right: chat -->
+<div id="main">
+  <div id="topbar">
+    <div>
+      <span id="status">Not logged in</span>
     </div>
+    <div>
+      <button id="loginBtn" class="btn">Login</button>
+      <button id="logoutBtn" class="btn secondary" style="display:none;">Logout</button>
+    </div>
+  </div>
+
+  <div id="messages"><div id="empty">Select a channel to start chatting.</div></div>
+
+  <div id="composer">
+    <input id="msgInput" placeholder="Type a message..." />
+    <button id="sendBtn" class="btn" disabled>Send</button>
+  </div>
+</div>
 
 <script>
-    const CLIENT_ID = 'YOUR_CLIENT_ID';
-    const REDIRECT_URI = 'http://YOUR_DOMAIN/discord.html';
-    const API_BASE = 'http://YOUR_DOMAIN:3000';
+/** Configure your backend public URL (Playit.gg) */
+const BACKEND = "http://started-gel.gl.at.ply.gg:38956";
 
-    let accessToken = localStorage.getItem('access_token');
-    let selectedChannel = null;
+/** State */
+let token = null;               // user OAuth token (Bearer)
+let me = null;                  // { id, username, discriminator, avatar }
+let currentGuild = null;        // guild id
+let currentChannel = null;      // channel id
+let ws = null;                  // WebSocket
 
-    // Check URL for token from OAuth callback
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('token')) {
-        accessToken = urlParams.get('token');
-        localStorage.setItem('access_token', accessToken);
-        window.history.replaceState({}, document.title, "discord.html");
+/** Elements */
+const el = (id)=>document.getElementById(id);
+const serversEl = el("servers");
+const channelsEl = el("channels");
+const messagesEl = el("messages");
+const statusEl = el("status");
+const loginBtn = el("loginBtn");
+const logoutBtn = el("logoutBtn");
+const msgInput = el("msgInput");
+const sendBtn = el("sendBtn");
+
+/* ---------- Auth: read token from URL hash, store, and clean URL ---------- */
+function handleOAuthCallback(){
+  if(location.hash.includes("access_token")){
+    const p = new URLSearchParams(location.hash.slice(1));
+    const at = p.get("access_token");
+    if(at){ localStorage.setItem("discord_token", at); token = at; }
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+}
+token = localStorage.getItem("discord_token");
+handleOAuthCallback();
+
+/* ---------- UI helpers ---------- */
+function setLoggedOutUI(){
+  statusEl.textContent = "Not logged in";
+  loginBtn.style.display = "inline-block";
+  logoutBtn.style.display = "none";
+  sendBtn.disabled = true;
+  serversEl.innerHTML = "";
+  channelsEl.innerHTML = "";
+  messagesEl.innerHTML = '<div id="empty">Select a channel to start chatting.</div>';
+  currentGuild = null;
+  currentChannel = null;
+  if(ws) { try { ws.close(); } catch(_){} ws = null; }
+}
+function setLoggedInUI(){
+  loginBtn.style.display = "none";
+  logoutBtn.style.display = "inline-block";
+}
+
+/* ---------- Buttons ---------- */
+loginBtn.onclick = ()=>{ window.location.href = `${BACKEND}/login`; };
+logoutBtn.onclick = ()=>{
+  localStorage.removeItem("discord_token");
+  token = null; me = null;
+  setLoggedOutUI();
+};
+
+/* ---------- Fetch helpers ---------- */
+async function discordMe(){
+  // Query Discord directly with the user token (keeps client_id/secret off frontend)
+  const r = await fetch("https://discord.com/api/v10/users/@me", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if(!r.ok) throw new Error("Failed to fetch user");
+  return r.json();
+}
+async function loadMutualGuilds(){
+  const r = await fetch(`${BACKEND}/mutualGuilds?token=${encodeURIComponent(token)}`);
+  if(!r.ok) throw new Error("Failed guilds");
+  return r.json();
+}
+async function loadGuildChannels(guildId){
+  const r = await fetch(`${BACKEND}/channels/${guildId}`);
+  if(!r.ok) throw new Error("Failed channels");
+  return r.json();
+}
+async function loadRecentMessages(channelId, limit=50){
+  // Uses backend proxy so bot token stays server-side
+  const r = await fetch(`${BACKEND}/messages/${channelId}?limit=${limit}`);
+  if(!r.ok) throw new Error("Failed messages");
+  return r.json();
+}
+async function sendMessage(channelId, content){
+  const body = { guildId: currentGuild, channelId, content };
+  const r = await fetch(`${BACKEND}/sendMessage`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok) throw new Error("Failed to send");
+  return r.json();
+}
+
+/* ---------- Renderers ---------- */
+function renderServers(guilds){
+  serversEl.innerHTML = "";
+  guilds.forEach(g=>{
+    const div = document.createElement("div");
+    div.className = "server" + (g.id===currentGuild ? " active":"");
+    // If you want icons, build CDN URL; fall back to first letter
+    if(g.icon){
+      const img = document.createElement("img");
+      const fmt = g.icon.startsWith("a_") ? "gif" : "png";
+      img.src = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.${fmt}?size=64`;
+      div.appendChild(img);
+    } else {
+      div.textContent = g.name?.[0]?.toUpperCase() || "?";
     }
-
-    function updateLoginState() {
-        const status = document.getElementById('status');
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        if (accessToken) {
-            fetch(`${API_BASE}/me?token=${accessToken}`)
-                .then(res => res.json())
-                .then(user => {
-                    status.textContent = `Logged in as ${user.username}#${user.discriminator}`;
-                    loginBtn.style.display = 'none';
-                    logoutBtn.style.display = 'inline-block';
-                    loadServers();
-                });
-        } else {
-            status.textContent = "Not logged in";
-            loginBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
-        }
-    }
-
-    document.getElementById('loginBtn').onclick = () => {
-        window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20guilds%20guilds.members.read%20messages.read%20messages.write`;
+    div.title = g.name || "Server";
+    div.onclick = async ()=>{
+      currentGuild = g.id;
+      document.querySelectorAll(".server").forEach(n=>n.classList.remove("active"));
+      div.classList.add("active");
+      await showChannels(g.id);
     };
-
-    document.getElementById('logoutBtn').onclick = () => {
-        localStorage.removeItem('access_token');
-        accessToken = null;
-        document.getElementById('sidebar').innerHTML = '';
-        document.getElementById('channels').innerHTML = '';
-        document.getElementById('messages').innerHTML = '';
-        updateLoginState();
+    serversEl.appendChild(div);
+  });
+}
+function renderChannels(chans){
+  channelsEl.innerHTML = "";
+  chans.forEach(c=>{
+    if(c.type !== 0) return; // text channels only
+    const row = document.createElement("div");
+    row.className = "chan" + (c.id===currentChannel ? " active":"");
+    row.textContent = `# ${c.name}`;
+    row.onclick = async ()=>{
+      document.querySelectorAll(".chan").forEach(n=>n.classList.remove("active"));
+      row.classList.add("active");
+      await openChannel(c.id);
     };
-
-    function loadServers() {
-        fetch(`${API_BASE}/guilds?token=${accessToken}`)
-            .then(res => res.json())
-            .then(guilds => {
-                const sidebar = document.getElementById('sidebar');
-                sidebar.innerHTML = '';
-                guilds.forEach(g => {
-                    const div = document.createElement('div');
-                    div.className = 'server-icon';
-                    div.textContent = g.name[0];
-                    div.onclick = () => loadChannels(g.id);
-                    sidebar.appendChild(div);
-                });
-            });
+    channelsEl.appendChild(row);
+  });
+}
+function renderMessages(msgs){
+  messagesEl.innerHTML = "";
+  if(!msgs?.length){
+    messagesEl.innerHTML = '<div id="empty">No messages yet.</div>';
+    return;
+  }
+  // Discord API returns newest first; show oldest first
+  msgs.slice().reverse().forEach(m=>{
+    const line = document.createElement("div");
+    line.className = "msg";
+    const author = document.createElement("span");
+    author.className = "author";
+    author.textContent = m.author?.username ?? "Unknown";
+    const content = document.createElement("span");
+    content.textContent = `: ${m.content ?? ""}`;
+    const time = document.createElement("span");
+    time.className = "time";
+    if(m.timestamp){
+      const t = new Date(m.timestamp);
+      time.textContent = `  ${t.toLocaleString()}`;
     }
+    line.appendChild(author);
+    line.appendChild(content);
+    line.appendChild(time);
+    messagesEl.appendChild(line);
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
 
-    function loadChannels(guildId) {
-        fetch(`${API_BASE}/channels/${guildId}?token=${accessToken}`)
-            .then(res => res.json())
-            .then(channels => {
-                const chanDiv = document.getElementById('channels');
-                chanDiv.innerHTML = '';
-                channels.forEach(c => {
-                    const div = document.createElement('div');
-                    div.textContent = `# ${c.name}`;
-                    div.style.cursor = 'pointer';
-                    div.onclick = () => selectChannel(c.id);
-                    chanDiv.appendChild(div);
-                });
-            });
+/* ---------- Open channel: fetch history + hook WebSocket ---------- */
+async function openChannel(channelId){
+  currentChannel = channelId;
+  sendBtn.disabled = false;
+  // Load last 50
+  try{
+    const msgs = await loadRecentMessages(channelId, 50);
+    renderMessages(msgs);
+  }catch(e){ console.error(e); }
+
+  // Connect WS and subscribe for this guild/channel
+  connectWS();
+}
+
+/* ---------- Show channels for a guild ---------- */
+async function showChannels(guildId){
+  try{
+    const chans = await loadGuildChannels(guildId);
+    renderChannels(chans);
+    // Auto-open first text channel if available
+    const first = chans.find(c=>c.type===0);
+    if(first){ await openChannel(first.id); }
+  }catch(e){ console.error(e); }
+}
+
+/* ---------- WebSocket ---------- */
+function connectWS(){
+  if(ws) { try{ ws.close(); }catch(_){} }
+  ws = new WebSocket(BACKEND.replace(/^http/,"ws") + "/ws");
+  ws.onopen = ()=>{
+    // subscribe to the active guild/channel
+    if(currentGuild && currentChannel){
+      ws.send(JSON.stringify({ guildId: currentGuild, channelId: currentChannel }));
     }
+  };
+  ws.onmessage = (ev)=>{
+    try{
+      const data = JSON.parse(ev.data);
+      // Only append if it belongs to current channel
+      if(data.channel_id && data.channel_id !== currentChannel) return;
+      // Render a single line append
+      const line = document.createElement("div");
+      line.className = "msg";
+      const author = document.createElement("span"); author.className="author";
+      author.textContent = data.author?.username ?? "Unknown";
+      const content = document.createElement("span");
+      content.textContent = `: ${data.content ?? ""}`;
+      const time = document.createElement("span"); time.className="time";
+      if(data.timestamp){ time.textContent = "  " + new Date(data.timestamp).toLocaleString(); }
+      line.appendChild(author); line.appendChild(content); line.appendChild(time);
+      messagesEl.appendChild(line);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }catch(e){ console.error(e); }
+  };
+  ws.onclose = ()=> setTimeout(connectWS, 2500); // simple auto-reconnect
+}
 
-    function selectChannel(channelId) {
-        selectedChannel = channelId;
-        document.getElementById('messages').innerHTML = '';
-        loadMessages();
+/* ---------- Send message ---------- */
+sendBtn.onclick = async ()=>{
+  if(!currentChannel) return;
+  const content = msgInput.value.trim();
+  if(!content) return;
+  msgInput.value = "";
+  try{
+    await sendMessage(currentChannel, content);
+    // The server echoes via WS; if not, we could append optimistically here.
+  }catch(e){ console.error(e); }
+};
+
+/* ---------- Boot ---------- */
+(async function boot(){
+  if(!token){ setLoggedOutUI(); return; }
+  try{
+    setLoggedInUI();
+    me = await discordMe();
+    statusEl.textContent = `Logged in as ${me.username}#${me.discriminator}`;
+    const guilds = await loadMutualGuilds();
+    if(!guilds.length){
+      serversEl.innerHTML = ""; channelsEl.innerHTML = "";
+      messagesEl.innerHTML = '<div id="empty">No mutual servers with the bot.</div>';
+      return;
     }
-
-    function loadMessages() {
-        if (!selectedChannel) return;
-        fetch(`${API_BASE}/messages/${selectedChannel}?token=${accessToken}`)
-            .then(res => res.json())
-            .then(msgs => {
-                const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML = '';
-                msgs.reverse().forEach(m => {
-                    const div = document.createElement('div');
-                    div.textContent = `${m.author.username}: ${m.content}`;
-                    msgDiv.appendChild(div);
-                });
-                msgDiv.scrollTop = msgDiv.scrollHeight;
-            });
-    }
-
-    document.getElementById('sendBtn').onclick = () => {
-        const content = document.getElementById('msgInput').value;
-        if (!content || !selectedChannel) return;
-        fetch(`${API_BASE}/send/${selectedChannel}?token=${accessToken}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content })
-        }).then(() => {
-            document.getElementById('msgInput').value = '';
-            loadMessages();
-        });
-    };
-
-    // Live refresh every 2s
-    setInterval(loadMessages, 2000);
-
-    updateLoginState();
+    renderServers(guilds);
+    // Auto-select first guild
+    currentGuild = guilds[0].id;
+    document.querySelectorAll(".server")[0]?.classList.add("active");
+    await showChannels(currentGuild);
+  }catch(e){
+    console.error(e);
+    // Token may be invalid/expired
+    setLoggedOutUI();
+  }
+})();
 </script>
 </body>
 </html>
