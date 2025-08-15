@@ -32,77 +32,33 @@ button { margin: 5px 0; padding: 10px; border: none; border-radius: 8px; cursor:
 
 <script>
 const backendURL = "http://started-gel.gl.at.ply.gg:38956";
-let token = localStorage.getItem("discord_token");
 let currentChannelId = null;
 let chatInterval = null;
-// --- Check if logged in ---
+
+// --- Check login status ---
 async function checkLogin() {
     try {
-        const res = await fetch("http://started-gel.gl.at.ply.gg:38956/me", {
-            method: "GET",
-            credentials: "include" // include cookies
+        const res = await fetch(`${backendURL}/me`, {
+            credentials: "include"
         });
         if (res.status === 200) {
             const user = await res.json();
             document.getElementById("user").textContent = `Logged in as ${user.username}#${user.discriminator}`;
             document.getElementById("loginBtn").style.display = "none";
             document.getElementById("logoutBtn").style.display = "inline-block";
-            
-            // Call your existing functions to load guilds, channels, chat
-            if (typeof loadGuilds === "function") loadGuilds();
+            loadGuilds();
         } else {
             document.getElementById("user").textContent = "";
             document.getElementById("loginBtn").style.display = "inline-block";
             document.getElementById("logoutBtn").style.display = "none";
         }
     } catch(e) {
-        console.error("Failed to check login:", e);
+        console.error(e);
     }
 }
 
 // Call on page load
 checkLogin();
-
-// Logout button
-document.getElementById("logoutBtn").onclick = async () => {
-    await fetch("http://started-gel.gl.at.ply.gg:38956/logout", {
-        method: "POST",
-        credentials: "include"
-    });
-    document.getElementById("user").textContent = "";
-    document.getElementById("loginBtn").style.display = "inline-block";
-    document.getElementById("logoutBtn").style.display = "none";
-    // Optional: clear chat/server UI
-};
-
-// Handle OAuth callback
-(function handleOAuthCallback() {
-    const hash = window.location.hash;
-    if (hash.includes("access_token")) {
-        const params = new URLSearchParams(hash.slice(1));
-        token = params.get("access_token");
-        if(token) localStorage.setItem("discord_token", token);
-        history.replaceState(null, "", window.location.pathname);
-        updateUI();
-    } else if(token) {
-        updateUI();
-    }
-})();
-
-// Update UI after login
-async function updateUI() {
-    if(!token) return;
-    try {
-        const res = await fetch(`${backendURL}/me?token=${token}`);
-        const user = await res.json();
-        document.getElementById("user").textContent = `Logged in as ${user.username}#${user.discriminator}`;
-        document.getElementById("loginBtn").style.display = "none";
-        document.getElementById("logoutBtn").style.display = "inline-block";
-        loadGuilds();
-    } catch(e) {
-        console.error(e);
-    }
-}
 
 // Login button
 document.getElementById("loginBtn").onclick = () => {
@@ -110,9 +66,11 @@ document.getElementById("loginBtn").onclick = () => {
 };
 
 // Logout button
-document.getElementById("logoutBtn").onclick = () => {
-    localStorage.removeItem("discord_token");
-    token = null;
+document.getElementById("logoutBtn").onclick = async () => {
+    await fetch(`${backendURL}/logout`, {
+        method: "POST",
+        credentials: "include"
+    });
     document.getElementById("user").textContent = "";
     document.getElementById("loginBtn").style.display = "inline-block";
     document.getElementById("logoutBtn").style.display = "none";
@@ -122,10 +80,12 @@ document.getElementById("logoutBtn").onclick = () => {
 
 // Load user's guilds
 async function loadGuilds() {
-    if(!token) return;
     try {
         const res = await fetch('https://discord.com/api/users/@me/guilds', {
-            headers: { Authorization: `Bearer ${token}` }
+            credentials: "include",
+            headers: {
+                Authorization: `Bearer ${await getToken()}`
+            }
         });
         const guilds = await res.json();
         const serversDiv = document.getElementById("servers");
@@ -139,16 +99,21 @@ async function loadGuilds() {
     } catch(e) { console.error(e); }
 }
 
+// Helper: get token from backend via /me (cookie)
+async function getToken() {
+    // The backend already has it in a cookie; you can optionally return it here
+    // or just rely on Authorization cookie if the backend supports it
+    return ""; // empty string if using cookie-based auth
+}
+
 // Load channels for selected guild
 async function loadChannels(guildId) {
-    if(!token) return;
     try {
         const res = await fetch(`https://discord.com/api/guilds/${guildId}/channels`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${await getToken()}` }
         });
         const channels = await res.json();
         const serversDiv = document.getElementById("servers");
-        // Remove old channel div if exists
         const oldChannels = document.getElementById("channels");
         if(oldChannels) oldChannels.remove();
 
@@ -166,16 +131,15 @@ async function loadChannels(guildId) {
     } catch(e){console.error(e);}
 }
 
-// Load messages and start live updates
+// Load messages
 async function loadMessages(guildId, channelId){
     currentChannelId = channelId;
     if(chatInterval) clearInterval(chatInterval);
 
     async function fetchMessages() {
-        if(!token || !currentChannelId) return;
         try{
             const res = await fetch(`https://discord.com/api/channels/${currentChannelId}/messages?limit=20`, {
-                headers:{ Authorization:`Bearer ${token}` }
+                headers:{ Authorization:`Bearer ${await getToken()}` }
             });
             const messages = await res.json();
             const chatDiv = document.getElementById("chat");
@@ -189,19 +153,14 @@ async function loadMessages(guildId, channelId){
     }
 
     fetchMessages();
-    chatInterval = setInterval(fetchMessages, 5000); // refresh every 5 seconds
+    chatInterval = setInterval(fetchMessages, 5000);
 }
 
-// Message sending placeholder (requires bot token to actually send)
+// Sending messages (placeholder)
 document.getElementById("messageInput").addEventListener("keydown", async e => {
-    if(e.key==="Enter" && token){
-        const input = e.target;
-        const content = input.value;
-        if(!content) return;
-        try{
-            input.value = "";
-            // Sending messages requires a bot; you can implement via your backend
-        } catch(err){console.error(err);}
+    if(e.key==="Enter"){
+        e.target.value = "";
+        // actual sending requires bot or backend endpoint
     }
 });
 
