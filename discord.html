@@ -36,7 +36,7 @@ document.getElementById("loginBtn").onclick = ()=>{
     window.location.href = `${BACKEND}/login`;
 };
 
-// Handle OAuth2 callback token
+// Handle OAuth2 callback
 function handleCallback(){
     if(location.hash.includes("access_token")){
         const params = new URLSearchParams(location.hash.slice(1));
