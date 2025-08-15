@@ -94,19 +94,31 @@ document.getElementById("resetBtn").onclick = () => {
 // --- Load guilds ---
 async function loadGuilds() {
     try {
-        const res = await fetch('https://discord.com/api/users/@me/guilds', {
+        // Fetch user's guilds
+        const userRes = await fetch('https://discord.com/api/users/@me/guilds', {
             headers: { Authorization: `Bearer ${token}` }
         });
-        const guilds = await res.json();
+        const userGuilds = await userRes.json();
+
+        // Fetch bot's guilds from backend
+        const botRes = await fetch(`${backendURL}/bot-guilds`);
+        const botGuilds = await botRes.json();
+
+        // Only show mutual guilds
+        const mutualGuilds = userGuilds.filter(g => botGuilds.some(b => b.id === g.id));
+
+        // Render buttons
         const serversDiv = document.getElementById("servers");
         serversDiv.innerHTML = "";
-        guilds.forEach(g => {
+        mutualGuilds.forEach(g => {
             const btn = document.createElement("button");
             btn.textContent = g.name;
             btn.onclick = () => loadChannels(g.id);
             serversDiv.appendChild(btn);
         });
-    } catch(e) { console.error(e); }
+    } catch(e) {
+        console.error("Failed to load guilds:", e);
+    }
 }
 
 // --- Load channels ---
