@@ -27,7 +27,7 @@ select, button { padding:8px; margin:5px;}
 <div id="chat"></div>
 
 <script>
-const BACKEND = "http://started-gel.gl.at.ply.gg:38956"; // Your Playit.gg backend URL
+const BACKEND = "http://started-gel.gl.at.ply.gg:38956"; // Playit.gg public URL
 
 let token = localStorage.getItem("discord_token");
 
@@ -36,12 +36,14 @@ document.getElementById("loginBtn").onclick = ()=>{
     window.location.href = `${BACKEND}/login`;
 };
 
-// Check if redirected from OAuth2
-if(location.hash.includes("access_token")){
-    const params = new URLSearchParams(location.hash.slice(1));
-    token = params.get("access_token");
-    localStorage.setItem("discord_token", token);
-    location.hash="";
+// Handle OAuth2 callback token
+function handleCallback(){
+    if(location.hash.includes("access_token")){
+        const params = new URLSearchParams(location.hash.slice(1));
+        token = params.get("access_token");
+        localStorage.setItem("discord_token", token);
+        location.hash = ""; // remove token from URL
+    }
 }
 
 // Load mutual guilds
@@ -119,7 +121,8 @@ function connectWS(){
     };
 }
 
-// Initial load
+// Initialize
+handleCallback();
 loadGuilds();
 </script>
 </body>
