@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>AstralMC Discord Widget</title>
-  <style>
-    body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
-    #sidebar { background: #2c2f33; color: white; padding: 10px; width: 200px; overflow-y: auto; }
-    #channels { background: #23272a; color: white; padding: 10px; width: 200px; overflow-y: auto; }
-    #chat { flex: 1; display: flex; flex-direction: column; background: #36393f; }
-    #messages { flex: 1; overflow-y: auto; padding: 10px; color: white; }
-    #messageInput { display: flex; }
-    #messageInput input { flex: 1; padding: 5px; }
-    #messageInput button { padding: 5px; }
-    button { cursor: pointer; margin-top: 5px; }
-  </style>
+<meta charset="UTF-8">
+<title>AstralMC Discord Widget</title>
+<style>
+body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
+#sidebar { background: #2c2f33; color: white; padding: 10px; width: 200px; overflow-y: auto; }
+#channels { background: #23272a; color: white; padding: 10px; width: 200px; overflow-y: auto; }
+#chat { flex: 1; display: flex; flex-direction: column; background: #36393f; }
+#messages { flex: 1; overflow-y: auto; padding: 10px; color: white; }
+#messageInput { display: flex; }
+#messageInput input { flex: 1; padding: 5px; }
+#messageInput button { padding: 5px; }
+button { cursor: pointer; margin-top: 5px; }
+</style>
 </head>
 <body>
 
@@ -39,11 +39,28 @@
 </div>
 
 <script>
-const backendURL = "http://started-gel.gl.at.ply.gg:38956"; // Playit public URL
+const backendURL = "http://started-gel.gl.at.ply.gg:38956"; // Your Playit backend
+let token = localStorage.getItem("discord_token");
 let selectedGuild = null;
 let selectedChannel = null;
 let ws = null;
 
+/* --- Read token from URL fragment if present --- */
+function handleOAuthCallback() {
+  const hash = window.location.hash;
+  if (hash.includes("access_token")) {
+    const params = new URLSearchParams(hash.slice(1));
+    token = params.get("access_token");
+    if (token) {
+      localStorage.setItem("discord_token", token);
+    }
+    // Clean URL
+    history.replaceState(null, "", window.location.pathname);
+  }
+}
+handleOAuthCallback();
+
+/* --- UI Elements --- */
 const userInfo = document.getElementById('userInfo');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -53,96 +70,116 @@ const messagesDiv = document.getElementById('messages');
 const msgText = document.getElementById('msgText');
 const sendMsg = document.getElementById('sendMsg');
 
-async function checkLogin() {
-  let res = await fetch(`${backendURL}/me`, { credentials: 'include' });
-  if (res.ok) {
-    let user = await res.json();
-    userInfo.innerHTML = `
-      <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" width="40" style="border-radius:50%;" />
-      <span>${user.username}#${user.discriminator}</span>
-    `;
-    loginBtn.style.display = 'none';
-    logoutBtn.style.display = 'block';
-    loadGuilds();
-    connectWS();
-  } else {
-    loginBtn.style.display = 'block';
-    logoutBtn.style.display = 'none';
+function setLoggedOutUI() {
+  userInfo.textContent = '';
+  loginBtn.style.display = 'block';
+  logoutBtn.style.display = 'none';
+  guildList.innerHTML = '';
+  channelList.innerHTML = '';
+  messagesDiv.innerHTML = '';
+}
+
+function setLoggedInUI(user) {
+  userInfo.innerHTML = `<img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" width="40" style="border-radius:50%;" /> <span>${user.username}#${user.discriminator}</span>`;
+  loginBtn.style.display = 'none';
+  logoutBtn.style.display = 'block';
+}
+
+/* --- Backend API helpers --- */
+async function apiRequest(path, method = 'GET', body=null) {
+  const opts = { method, headers:{}, credentials:'include' };
+  if (token) opts.headers['Authorization'] = `Bearer ${token}`;
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const res = await fetch(`${backendURL}${path}`, opts);
+  if(!res.ok) throw new Error(res.statusText);
+  return res.json();
+}
+
+async function fetchUser() {
+  try {
+    const user = await apiRequest('/me');
+    setLoggedInUI(user);
+    return user;
+  } catch(e) {
+    setLoggedOutUI();
+    token = null;
+    localStorage.removeItem("discord_token");
+    console.error("User fetch failed", e);
   }
 }
 
+/* --- Load guilds and channels --- */
 async function loadGuilds() {
-  let res = await fetch(`${backendURL}/mutualGuilds`, { credentials: 'include' });
-  let guilds = await res.json();
+  const guilds = await apiRequest('/mutualGuilds');
   guildList.innerHTML = '';
   guilds.forEach(g => {
-    let btn = document.createElement('button');
+    const btn = document.createElement('button');
     btn.textContent = g.name;
-    btn.onclick = () => {
-      selectedGuild = g.id;
-      loadChannels(g.id);
-    };
+    btn.onclick = () => { selectedGuild = g.id; loadChannels(g.id); };
     guildList.appendChild(btn);
   });
 }
 
 async function loadChannels(guildId) {
-  let res = await fetch(`${backendURL}/channels/${guildId}`, { credentials: 'include' });
-  let chans = await res.json();
+  const chans = await apiRequest(`/channels/${guildId}`);
   channelList.innerHTML = '';
   chans.forEach(c => {
-    if(c.type !== 0) return; // text channels only
-    let btn = document.createElement('button');
+    if(c.type !== 0) return;
+    const btn = document.createElement('button');
     btn.textContent = `#${c.name}`;
-    btn.onclick = () => {
-      selectedChannel = c.id;
-      loadMessages(c.id);
-    };
+    btn.onclick = () => { selectedChannel = c.id; loadMessages(c.id); };
     channelList.appendChild(btn);
   });
 }
 
 async function loadMessages(channelId) {
-  let res = await fetch(`${backendURL}/messages/${channelId}?limit=50`, { credentials: 'include' });
-  let msgs = await res.json();
+  const msgs = await apiRequest(`/messages/${channelId}?limit=50`);
   messagesDiv.innerHTML = '';
-  msgs.forEach(m => addMessage(m));
+  msgs.forEach(addMessage);
 }
 
 function addMessage(m) {
-  let el = document.createElement('div');
+  const el = document.createElement('div');
   el.textContent = `${m.author.username}: ${m.content}`;
   messagesDiv.appendChild(el);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
+/* --- WebSocket for live messages --- */
 function connectWS() {
-  ws = new WebSocket(backendURL.replace('http','ws') + '/ws');
-  ws.onmessage = (ev) => {
-    let data = JSON.parse(ev.data);
+  ws = new WebSocket(backendURL.replace('http','ws')+'/ws');
+  ws.onmessage = (ev)=> {
+    const data = JSON.parse(ev.data);
     if (data.channelId === selectedChannel) addMessage(data);
   };
 }
 
+/* --- Button handlers --- */
 loginBtn.onclick = () => window.location.href = `${backendURL}/login`;
 logoutBtn.onclick = async () => {
   await fetch(`${backendURL}/logout`, { method:'POST', credentials:'include' });
-  location.reload();
+  localStorage.removeItem("discord_token");
+  token = null;
+  setLoggedOutUI();
 };
 sendMsg.onclick = async () => {
   if(!selectedChannel) return;
-  let content = msgText.value.trim();
+  const content = msgText.value.trim();
   if(!content) return;
-  await fetch(`${backendURL}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ guildId:selectedGuild, channelId:selectedChannel, content })
-  });
+  await apiRequest(`/sendMessage`, 'POST', { guildId:selectedGuild, channelId:selectedChannel, content });
   msgText.value = '';
 };
 
-checkLogin();
+/* --- Boot --- */
+(async function boot() {
+  if(token) {
+    await fetchUser();
+    await loadGuilds();
+    connectWS();
+  } else {
+    setLoggedOutUI();
+  }
+})();
 </script>
 
 </body>
