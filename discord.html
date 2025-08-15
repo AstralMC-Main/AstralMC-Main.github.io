@@ -7,8 +7,7 @@
 <style>
   :root { --bg:#1e1f22; --bg2:#2b2d31; --panel:#232428; --accent:#5865f2; --text:#eee; --muted:#9ca3af; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; height:100vh; display:flex; }
-  /* layout */
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial; height:100vh; display:flex; }
   #servers { width:80px; background:#202225; overflow:auto; padding:10px 6px; }
   #channels { width:240px; background:var(--panel); overflow:auto; padding:10px; }
   #main { flex:1; display:flex; flex-direction:column; }
@@ -20,14 +19,11 @@
   #composer button, .btn { padding:8px 12px; border-radius:8px; border:none; color:white; background:var(--accent); cursor:pointer; }
   .btn.secondary { background:#3b3d44; }
   .btn:disabled { opacity:.6; cursor:not-allowed; }
-  /* servers */
   .server { width:56px; height:56px; border-radius:50%; background:#36393f; display:flex; align-items:center; justify-content:center; margin:8px 0; cursor:pointer; border:2px solid transparent; user-select:none; }
   .server.active { border-color:var(--accent); }
   .server img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
-  /* channels */
   .chan { padding:6px 8px; border-radius:6px; cursor:pointer; color:var(--muted); }
   .chan.active { background:#2f3136; color:var(--text); }
-  /* messages */
   .msg { margin-bottom:10px; }
   .author { font-weight:600; margin-right:6px; }
   .time { color:var(--muted); font-size:12px; margin-left:6px; }
@@ -36,18 +32,12 @@
 </head>
 <body>
 
-<!-- Left: servers -->
 <div id="servers"></div>
-
-<!-- Middle: channels -->
 <div id="channels"></div>
 
-<!-- Right: chat -->
 <div id="main">
   <div id="topbar">
-    <div>
-      <span id="status">Not logged in</span>
-    </div>
+    <div><span id="status">Not logged in</span></div>
     <div>
       <button id="loginBtn" class="btn">Login</button>
       <button id="logoutBtn" class="btn secondary" style="display:none;">Logout</button>
@@ -63,17 +53,22 @@
 </div>
 
 <script>
-/** Configure your backend public URL (Playit.gg) */
-const BACKEND = "http://started-gel.gl.at.ply.gg:38956";
+/** IMPORTANT: use HTTPS here (GitHub Pages is https) */
+const BACKEND = "https://started-gel.gl.at.ply.gg:38956";
 
-/** State */
-let token = null;               // user OAuth token (Bearer)
-let me = null;                  // { id, username, discriminator, avatar }
-let currentGuild = null;        // guild id
-let currentChannel = null;      // channel id
-let ws = null;                  // WebSocket
+/** WebSocket URL helper */
+function wsUrlFromBackend(url) {
+  if (url.startsWith("https://")) return url.replace(/^https:\/\//i, "wss://") + "/ws";
+  if (url.startsWith("http://"))  return url.replace(/^http:\/\//i,  "ws://")  + "/ws";
+  return url + "/ws";
+}
 
-/** Elements */
+let token = null;
+let me = null;
+let currentGuild = null;
+let currentChannel = null;
+let ws = null;
+
 const el = (id)=>document.getElementById(id);
 const serversEl = el("servers");
 const channelsEl = el("channels");
@@ -84,19 +79,20 @@ const logoutBtn = el("logoutBtn");
 const msgInput = el("msgInput");
 const sendBtn = el("sendBtn");
 
-/* ---------- Auth: read token from URL hash, store, and clean URL ---------- */
+/* --- OAuth callback from backend: #access_token=... --- */
 function handleOAuthCallback(){
   if(location.hash.includes("access_token")){
     const p = new URLSearchParams(location.hash.slice(1));
     const at = p.get("access_token");
     if(at){ localStorage.setItem("discord_token", at); token = at; }
+    // Clean URL (removes token fragment)
     history.replaceState(null, "", location.pathname + location.search);
   }
 }
 token = localStorage.getItem("discord_token");
 handleOAuthCallback();
 
-/* ---------- UI helpers ---------- */
+/* --- UI state --- */
 function setLoggedOutUI(){
   statusEl.textContent = "Not logged in";
   loginBtn.style.display = "inline-block";
@@ -107,71 +103,65 @@ function setLoggedOutUI(){
   messagesEl.innerHTML = '<div id="empty">Select a channel to start chatting.</div>';
   currentGuild = null;
   currentChannel = null;
-  if(ws) { try { ws.close(); } catch(_){} ws = null; }
+  if(ws){ try{ ws.close(); }catch(_){} ws = null; }
 }
 function setLoggedInUI(){
   loginBtn.style.display = "none";
   logoutBtn.style.display = "inline-block";
 }
 
-/* ---------- Buttons ---------- */
-loginBtn.onclick = ()=>{ window.location.href = `${BACKEND}/login`; };
+/* --- Buttons --- */
+loginBtn.onclick = ()=> window.location.href = `${BACKEND}/login`;
 logoutBtn.onclick = ()=>{
   localStorage.removeItem("discord_token");
   token = null; me = null;
   setLoggedOutUI();
 };
 
-/* ---------- Fetch helpers ---------- */
-async function discordMe(){
-  // Query Discord directly with the user token (keeps client_id/secret off frontend)
-  const r = await fetch("https://discord.com/api/v10/users/@me", {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  if(!r.ok) throw new Error("Failed to fetch user");
+/* --- Backend helpers (no direct Discord calls in browser) --- */
+async function apiMe(){
+  const r = await fetch(`${BACKEND}/me?token=${encodeURIComponent(token)}`);
+  if(!r.ok) throw new Error("Failed /me");
   return r.json();
 }
-async function loadMutualGuilds(){
+async function apiGuilds(){
   const r = await fetch(`${BACKEND}/mutualGuilds?token=${encodeURIComponent(token)}`);
-  if(!r.ok) throw new Error("Failed guilds");
+  if(!r.ok) throw new Error("Failed /mutualGuilds");
   return r.json();
 }
-async function loadGuildChannels(guildId){
+async function apiChannels(guildId){
   const r = await fetch(`${BACKEND}/channels/${guildId}`);
-  if(!r.ok) throw new Error("Failed channels");
+  if(!r.ok) throw new Error("Failed /channels");
   return r.json();
 }
-async function loadRecentMessages(channelId, limit=50){
-  // Uses backend proxy so bot token stays server-side
+async function apiMessages(channelId, limit=50){
   const r = await fetch(`${BACKEND}/messages/${channelId}?limit=${limit}`);
-  if(!r.ok) throw new Error("Failed messages");
+  if(!r.ok) throw new Error("Failed /messages");
   return r.json();
 }
-async function sendMessage(channelId, content){
-  const body = { guildId: currentGuild, channelId, content };
+async function apiSend(channelId, content){
   const r = await fetch(`${BACKEND}/sendMessage`,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ guildId: currentGuild, channelId, content })
   });
-  if(!r.ok) throw new Error("Failed to send");
+  if(!r.ok) throw new Error("Failed /sendMessage");
   return r.json();
 }
 
-/* ---------- Renderers ---------- */
+/* --- Rendering --- */
 function renderServers(guilds){
   serversEl.innerHTML = "";
   guilds.forEach(g=>{
     const div = document.createElement("div");
     div.className = "server" + (g.id===currentGuild ? " active":"");
-    // If you want icons, build CDN URL; fall back to first letter
     if(g.icon){
       const img = document.createElement("img");
       const fmt = g.icon.startsWith("a_") ? "gif" : "png";
       img.src = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.${fmt}?size=64`;
       div.appendChild(img);
     } else {
-      div.textContent = g.name?.[0]?.toUpperCase() || "?";
+      div.textContent = (g.name?.[0] || "?").toUpperCase();
     }
     div.title = g.name || "Server";
     div.onclick = async ()=>{
@@ -186,7 +176,7 @@ function renderServers(guilds){
 function renderChannels(chans){
   channelsEl.innerHTML = "";
   chans.forEach(c=>{
-    if(c.type !== 0) return; // text channels only
+    if(c.type !== 0) return;
     const row = document.createElement("div");
     row.className = "chan" + (c.id===currentChannel ? " active":"");
     row.textContent = `# ${c.name}`;
@@ -200,64 +190,50 @@ function renderChannels(chans){
 }
 function renderMessages(msgs){
   messagesEl.innerHTML = "";
-  if(!msgs?.length){
+  if(!Array.isArray(msgs) || !msgs.length){
     messagesEl.innerHTML = '<div id="empty">No messages yet.</div>';
     return;
   }
-  // Discord API returns newest first; show oldest first
   msgs.slice().reverse().forEach(m=>{
     const line = document.createElement("div");
     line.className = "msg";
-    const author = document.createElement("span");
-    author.className = "author";
+    const author = document.createElement("span"); author.className="author";
     author.textContent = m.author?.username ?? "Unknown";
     const content = document.createElement("span");
     content.textContent = `: ${m.content ?? ""}`;
-    const time = document.createElement("span");
-    time.className = "time";
-    if(m.timestamp){
-      const t = new Date(m.timestamp);
-      time.textContent = `  ${t.toLocaleString()}`;
-    }
-    line.appendChild(author);
-    line.appendChild(content);
-    line.appendChild(time);
+    const time = document.createElement("span"); time.className="time";
+    if(m.timestamp){ time.textContent = "  " + new Date(m.timestamp).toLocaleString(); }
+    line.appendChild(author); line.appendChild(content); line.appendChild(time);
     messagesEl.appendChild(line);
   });
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-/* ---------- Open channel: fetch history + hook WebSocket ---------- */
+/* --- Channel ops --- */
 async function openChannel(channelId){
   currentChannel = channelId;
   sendBtn.disabled = false;
-  // Load last 50
   try{
-    const msgs = await loadRecentMessages(channelId, 50);
+    const msgs = await apiMessages(channelId, 50);
     renderMessages(msgs);
   }catch(e){ console.error(e); }
-
-  // Connect WS and subscribe for this guild/channel
   connectWS();
 }
-
-/* ---------- Show channels for a guild ---------- */
 async function showChannels(guildId){
   try{
-    const chans = await loadGuildChannels(guildId);
+    const chans = await apiChannels(guildId);
     renderChannels(chans);
-    // Auto-open first text channel if available
     const first = chans.find(c=>c.type===0);
-    if(first){ await openChannel(first.id); }
+    if(first) await openChannel(first.id);
   }catch(e){ console.error(e); }
 }
 
-/* ---------- WebSocket ---------- */
+/* --- WebSocket --- */
 function connectWS(){
-  if(ws) { try{ ws.close(); }catch(_){} }
-  ws = new WebSocket(BACKEND.replace(/^http/,"ws") + "/ws");
+  if(ws){ try{ ws.close(); }catch(_){} }
+  const url = wsUrlFromBackend(BACKEND);
+  ws = new WebSocket(url);
   ws.onopen = ()=>{
-    // subscribe to the active guild/channel
     if(currentGuild && currentChannel){
       ws.send(JSON.stringify({ guildId: currentGuild, channelId: currentChannel }));
     }
@@ -265,9 +241,7 @@ function connectWS(){
   ws.onmessage = (ev)=>{
     try{
       const data = JSON.parse(ev.data);
-      // Only append if it belongs to current channel
       if(data.channel_id && data.channel_id !== currentChannel) return;
-      // Render a single line append
       const line = document.createElement("div");
       line.className = "msg";
       const author = document.createElement("span"); author.className="author";
@@ -281,42 +255,39 @@ function connectWS(){
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }catch(e){ console.error(e); }
   };
-  ws.onclose = ()=> setTimeout(connectWS, 2500); // simple auto-reconnect
+  ws.onclose = ()=> setTimeout(connectWS, 2500);
 }
 
-/* ---------- Send message ---------- */
+/* --- Send --- */
 sendBtn.onclick = async ()=>{
   if(!currentChannel) return;
   const content = msgInput.value.trim();
   if(!content) return;
   msgInput.value = "";
-  try{
-    await sendMessage(currentChannel, content);
-    // The server echoes via WS; if not, we could append optimistically here.
-  }catch(e){ console.error(e); }
+  try{ await apiSend(currentChannel, content); }catch(e){ console.error(e); }
 };
 
-/* ---------- Boot ---------- */
+/* --- Boot --- */
 (async function boot(){
   if(!token){ setLoggedOutUI(); return; }
   try{
     setLoggedInUI();
-    me = await discordMe();
+    me = await apiMe(); // uses backend proxy (no CORS to Discord)
     statusEl.textContent = `Logged in as ${me.username}#${me.discriminator}`;
-    const guilds = await loadMutualGuilds();
+    const guilds = await apiGuilds();
     if(!guilds.length){
-      serversEl.innerHTML = ""; channelsEl.innerHTML = "";
+      serversEl.innerHTML = "";
+      channelsEl.innerHTML = "";
       messagesEl.innerHTML = '<div id="empty">No mutual servers with the bot.</div>';
       return;
     }
     renderServers(guilds);
-    // Auto-select first guild
     currentGuild = guilds[0].id;
     document.querySelectorAll(".server")[0]?.classList.add("active");
     await showChannels(currentGuild);
   }catch(e){
     console.error(e);
-    // Token may be invalid/expired
+    // likely token invalid or backend blocked by mixed content
     setLoggedOutUI();
   }
 })();
