@@ -14,6 +14,7 @@ button { margin: 5px 0; padding: 10px; border: none; border-radius: 8px; cursor:
 #servers div { margin-bottom: 5px; }
 #chat { flex: 1; overflow-y: auto; background: #36393f; padding: 10px; border-radius: 8px; }
 #messageInput { margin-top: 10px; padding: 8px; border-radius: 8px; border: none; width: 100%; }
+#resetBtn { position: fixed; bottom: 10px; left: 10px; padding: 5px 10px; font-size: 12px; background: #7289da; border-radius: 5px; color: #fff; border: none; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -30,12 +31,14 @@ button { margin: 5px 0; padding: 10px; border: none; border-radius: 8px; cursor:
     <input id="messageInput" placeholder="Type a message..." />
 </div>
 
+<button id="resetBtn">Reset Cookie / Reload</button>
+
 <script>
 const backendURL = "http://started-gel.gl.at.ply.gg:38956";
 let currentChannelId = null;
 let chatInterval = null;
 
-// --- Check login status ---
+// --- Check login status on page load ---
 async function checkLogin() {
     try {
         const res = await fetch(`${backendURL}/me`, {
@@ -48,44 +51,45 @@ async function checkLogin() {
             document.getElementById("logoutBtn").style.display = "inline-block";
             loadGuilds();
         } else {
-            document.getElementById("user").textContent = "";
-            document.getElementById("loginBtn").style.display = "inline-block";
-            document.getElementById("logoutBtn").style.display = "none";
+            showLoggedOut();
         }
     } catch(e) {
         console.error(e);
+        showLoggedOut();
     }
 }
 
-// Call on page load
-checkLogin();
-
-// Login button
-document.getElementById("loginBtn").onclick = () => {
-    window.location.href = `${backendURL}/login`;
-};
-
-// Logout button
-document.getElementById("logoutBtn").onclick = async () => {
-    await fetch(`${backendURL}/logout`, {
-        method: "POST",
-        credentials: "include"
-    });
+// --- Helper to show login state ---
+function showLoggedOut() {
     document.getElementById("user").textContent = "";
     document.getElementById("loginBtn").style.display = "inline-block";
     document.getElementById("logoutBtn").style.display = "none";
     document.getElementById("servers").innerHTML = "";
     document.getElementById("chat").innerHTML = "";
+}
+
+// --- Login button ---
+document.getElementById("loginBtn").onclick = () => {
+    window.location.href = `${backendURL}/login`;
 };
 
-// Load user's guilds
+// --- Logout button ---
+document.getElementById("logoutBtn").onclick = async () => {
+    await fetch(`${backendURL}/logout`, { method: "POST", credentials: "include" });
+    showLoggedOut();
+};
+
+// --- Reset button ---
+document.getElementById("resetBtn").onclick = () => {
+    document.cookie.split(";").forEach(c => document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"));
+    location.reload();
+};
+
+// --- Load user's guilds ---
 async function loadGuilds() {
     try {
         const res = await fetch('https://discord.com/api/users/@me/guilds', {
-            credentials: "include",
-            headers: {
-                Authorization: `Bearer ${await getToken()}`
-            }
+            credentials: "include"
         });
         const guilds = await res.json();
         const serversDiv = document.getElementById("servers");
@@ -99,18 +103,11 @@ async function loadGuilds() {
     } catch(e) { console.error(e); }
 }
 
-// Helper: get token from backend via /me (cookie)
-async function getToken() {
-    // The backend already has it in a cookie; you can optionally return it here
-    // or just rely on Authorization cookie if the backend supports it
-    return ""; // empty string if using cookie-based auth
-}
-
-// Load channels for selected guild
+// --- Load channels for a guild ---
 async function loadChannels(guildId) {
     try {
         const res = await fetch(`https://discord.com/api/guilds/${guildId}/channels`, {
-            headers: { Authorization: `Bearer ${await getToken()}` }
+            credentials: "include"
         });
         const channels = await res.json();
         const serversDiv = document.getElementById("servers");
@@ -120,7 +117,7 @@ async function loadChannels(guildId) {
         const channelDiv = document.createElement("div");
         channelDiv.id = "channels";
         channels.forEach(c => {
-            if(c.type===0){ // text channel
+            if(c.type===0){
                 const chBtn = document.createElement("button");
                 chBtn.textContent = c.name;
                 chBtn.onclick = () => loadMessages(guildId, c.id);
@@ -131,15 +128,15 @@ async function loadChannels(guildId) {
     } catch(e){console.error(e);}
 }
 
-// Load messages
+// --- Load messages for a channel ---
 async function loadMessages(guildId, channelId){
     currentChannelId = channelId;
     if(chatInterval) clearInterval(chatInterval);
 
     async function fetchMessages() {
-        try{
+        try {
             const res = await fetch(`https://discord.com/api/channels/${currentChannelId}/messages?limit=20`, {
-                headers:{ Authorization:`Bearer ${await getToken()}` }
+                credentials: "include"
             });
             const messages = await res.json();
             const chatDiv = document.getElementById("chat");
@@ -156,14 +153,16 @@ async function loadMessages(guildId, channelId){
     chatInterval = setInterval(fetchMessages, 5000);
 }
 
-// Sending messages (placeholder)
+// --- Send message placeholder ---
 document.getElementById("messageInput").addEventListener("keydown", async e => {
     if(e.key==="Enter"){
         e.target.value = "";
-        // actual sending requires bot or backend endpoint
+        // actual sending requires bot/backend
     }
 });
 
+// --- Run ---
+checkLogin();
 </script>
 </body>
 </html>
