@@ -7,10 +7,10 @@
 <style>
 body { font-family:sans-serif; margin:0; padding:0; background:#1e1e1e; color:white;}
 header { padding:10px; text-align:center;}
-select, button { padding:8px; margin:5px;}
+select, button, input { padding:8px; margin:5px;}
 #chat { width:100%; height:70vh; background:#2e2e2e; overflow:auto; padding:5px; border-radius:6px;}
-#input { width:70%; padding:8px; border-radius:4px;}
-#send { padding:8px; border-radius:4px;}
+#input { width:70%; border-radius:4px;}
+#send { border-radius:4px;}
 </style>
 </head>
 <body>
@@ -29,24 +29,29 @@ select, button { padding:8px; margin:5px;}
 <script>
 const BACKEND = "http://started-gel.gl.at.ply.gg:38956"; // Playit.gg public URL
 
+// -------------------- Handle OAuth2 callback --------------------
+function handleOAuthCallback() {
+    if (location.hash.includes("access_token")) {
+        const hash = new URLSearchParams(location.hash.slice(1));
+        const accessToken = hash.get("access_token");
+        if (accessToken) {
+            localStorage.setItem("discord_token", accessToken);
+            console.log("Discord token saved:", accessToken);
+            history.replaceState(null, "", location.pathname + location.search);
+        }
+    }
+}
+handleOAuthCallback();
+
+// Get token from storage
 let token = localStorage.getItem("discord_token");
 
-// Login button
+// -------------------- Login button --------------------
 document.getElementById("loginBtn").onclick = ()=>{
     window.location.href = `${BACKEND}/login`;
 };
 
-// Handle OAuth2 callback
-function handleCallback(){
-    if(location.hash.includes("access_token")){
-        const params = new URLSearchParams(location.hash.slice(1));
-        token = params.get("access_token");
-        localStorage.setItem("discord_token", token);
-        location.hash = ""; // remove token from URL
-    }
-}
-
-// Load mutual guilds
+// -------------------- Load mutual guilds --------------------
 async function loadGuilds(){
     if(!token) return;
     try{
@@ -63,7 +68,7 @@ async function loadGuilds(){
     }catch(e){console.error(e);}
 }
 
-// Load channels for selected guild
+// -------------------- Load channels --------------------
 async function loadChannels(){
     const gid = document.getElementById("guildSelect").value;
     if(!gid) return;
@@ -83,7 +88,7 @@ async function loadChannels(){
 
 document.getElementById("guildSelect").onchange = loadChannels;
 
-// Send message
+// -------------------- Send message --------------------
 document.getElementById("send").onclick = async ()=>{
     const guildId = document.getElementById("guildSelect").value;
     const channelId = document.getElementById("channelSelect").value;
@@ -99,7 +104,7 @@ document.getElementById("send").onclick = async ()=>{
     }catch(e){console.error(e);}
 };
 
-// WebSocket connection
+// -------------------- WebSocket connection --------------------
 let ws;
 function connectWS(){
     if(ws) ws.close();
@@ -121,9 +126,10 @@ function connectWS(){
     };
 }
 
-// Initialize
-handleCallback();
-loadGuilds();
+// -------------------- Initialize --------------------
+if(token){
+    loadGuilds();
+}
 </script>
 </body>
 </html>
