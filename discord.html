@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Discord Widget</title>
+  <title>AstralMC Discord Widget</title>
   <style>
     body { font-family: sans-serif; display: flex; margin: 0; height: 100vh; }
     #sidebar { background: #2c2f33; color: white; padding: 10px; width: 200px; overflow-y: auto; }
@@ -39,34 +39,42 @@
 </div>
 
 <script>
-const backendURL = "http://localhost:3000"; // Change to your backend URL
+const backendURL = "http://started-gel.gl.at.ply.gg:38956"; // Playit public URL
 let selectedGuild = null;
 let selectedChannel = null;
 let ws = null;
+
+const userInfo = document.getElementById('userInfo');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const guildList = document.getElementById('guildList');
+const channelList = document.getElementById('channelList');
+const messagesDiv = document.getElementById('messages');
+const msgText = document.getElementById('msgText');
+const sendMsg = document.getElementById('sendMsg');
 
 async function checkLogin() {
   let res = await fetch(`${backendURL}/me`, { credentials: 'include' });
   if (res.ok) {
     let user = await res.json();
-    document.getElementById('userInfo').innerHTML = `
+    userInfo.innerHTML = `
       <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" width="40" style="border-radius:50%;" />
-      <span>${user.username}</span>
+      <span>${user.username}#${user.discriminator}</span>
     `;
-    document.getElementById('loginBtn').style.display = 'none';
-    document.getElementById('logoutBtn').style.display = 'block';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'block';
     loadGuilds();
     connectWS();
   } else {
-    document.getElementById('loginBtn').style.display = 'block';
-    document.getElementById('logoutBtn').style.display = 'none';
+    loginBtn.style.display = 'block';
+    logoutBtn.style.display = 'none';
   }
 }
 
 async function loadGuilds() {
-  let res = await fetch(`${backendURL}/guilds`, { credentials: 'include' });
+  let res = await fetch(`${backendURL}/mutualGuilds`, { credentials: 'include' });
   let guilds = await res.json();
-  let list = document.getElementById('guildList');
-  list.innerHTML = '';
+  guildList.innerHTML = '';
   guilds.forEach(g => {
     let btn = document.createElement('button');
     btn.textContent = g.name;
@@ -74,72 +82,64 @@ async function loadGuilds() {
       selectedGuild = g.id;
       loadChannels(g.id);
     };
-    list.appendChild(btn);
+    guildList.appendChild(btn);
   });
 }
 
 async function loadChannels(guildId) {
   let res = await fetch(`${backendURL}/channels/${guildId}`, { credentials: 'include' });
   let chans = await res.json();
-  let list = document.getElementById('channelList');
-  list.innerHTML = '';
+  channelList.innerHTML = '';
   chans.forEach(c => {
+    if(c.type !== 0) return; // text channels only
     let btn = document.createElement('button');
     btn.textContent = `#${c.name}`;
     btn.onclick = () => {
       selectedChannel = c.id;
       loadMessages(c.id);
     };
-    list.appendChild(btn);
+    channelList.appendChild(btn);
   });
 }
 
 async function loadMessages(channelId) {
-  let res = await fetch(`${backendURL}/messages/${channelId}`, { credentials: 'include' });
+  let res = await fetch(`${backendURL}/messages/${channelId}?limit=50`, { credentials: 'include' });
   let msgs = await res.json();
-  let msgDiv = document.getElementById('messages');
-  msgDiv.innerHTML = '';
+  messagesDiv.innerHTML = '';
   msgs.forEach(m => addMessage(m));
 }
 
 function addMessage(m) {
-  let msgDiv = document.getElementById('messages');
   let el = document.createElement('div');
   el.textContent = `${m.author.username}: ${m.content}`;
-  msgDiv.appendChild(el);
-  msgDiv.scrollTop = msgDiv.scrollHeight;
+  messagesDiv.appendChild(el);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 function connectWS() {
-  ws = new WebSocket(`${backendURL.replace('http', 'ws')}/ws`);
-  ws.onmessage = (event) => {
-    let data = JSON.parse(event.data);
-    if (data.channelId === selectedChannel) {
-      addMessage(data);
-    }
+  ws = new WebSocket(backendURL.replace('http','ws') + '/ws');
+  ws.onmessage = (ev) => {
+    let data = JSON.parse(ev.data);
+    if (data.channelId === selectedChannel) addMessage(data);
   };
 }
 
-document.getElementById('loginBtn').onclick = () => {
-  window.location.href = `${backendURL}/auth/discord`;
-};
-
-document.getElementById('logoutBtn').onclick = async () => {
-  await fetch(`${backendURL}/logout`, { method: 'POST', credentials: 'include' });
+loginBtn.onclick = () => window.location.href = `${backendURL}/login`;
+logoutBtn.onclick = async () => {
+  await fetch(`${backendURL}/logout`, { method:'POST', credentials:'include' });
   location.reload();
 };
-
-document.getElementById('sendMsg').onclick = async () => {
-  if (!selectedChannel) return;
-  let content = document.getElementById('msgText').value;
-  if (!content) return;
-  await fetch(`${backendURL}/messages/${selectedChannel}`, {
+sendMsg.onclick = async () => {
+  if(!selectedChannel) return;
+  let content = msgText.value.trim();
+  if(!content) return;
+  await fetch(`${backendURL}/sendMessage`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type':'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ content })
+    body: JSON.stringify({ guildId:selectedGuild, channelId:selectedChannel, content })
   });
-  document.getElementById('msgText').value = '';
+  msgText.value = '';
 };
 
 checkLogin();
