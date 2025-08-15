@@ -35,6 +35,45 @@ const backendURL = "http://started-gel.gl.at.ply.gg:38956";
 let token = localStorage.getItem("discord_token");
 let currentChannelId = null;
 let chatInterval = null;
+// --- Check if logged in ---
+async function checkLogin() {
+    try {
+        const res = await fetch("http://started-gel.gl.at.ply.gg:38956/me", {
+            method: "GET",
+            credentials: "include" // include cookies
+        });
+        if (res.status === 200) {
+            const user = await res.json();
+            document.getElementById("user").textContent = `Logged in as ${user.username}#${user.discriminator}`;
+            document.getElementById("loginBtn").style.display = "none";
+            document.getElementById("logoutBtn").style.display = "inline-block";
+            
+            // Call your existing functions to load guilds, channels, chat
+            if (typeof loadGuilds === "function") loadGuilds();
+        } else {
+            document.getElementById("user").textContent = "";
+            document.getElementById("loginBtn").style.display = "inline-block";
+            document.getElementById("logoutBtn").style.display = "none";
+        }
+    } catch(e) {
+        console.error("Failed to check login:", e);
+    }
+}
+
+// Call on page load
+checkLogin();
+
+// Logout button
+document.getElementById("logoutBtn").onclick = async () => {
+    await fetch("http://started-gel.gl.at.ply.gg:38956/logout", {
+        method: "POST",
+        credentials: "include"
+    });
+    document.getElementById("user").textContent = "";
+    document.getElementById("loginBtn").style.display = "inline-block";
+    document.getElementById("logoutBtn").style.display = "none";
+    // Optional: clear chat/server UI
+};
 
 // Handle OAuth callback
 (function handleOAuthCallback() {
