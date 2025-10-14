@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hypixel Skyblock Auction Viewer</title>
+    <style>
+        :root {
+            --bg: #0f1724;
+            --card: #0b1220;
+            --muted: #94a3b8;
+            --accent: #60a5fa;
+            --glass: rgba(255, 255, 255, 0.03);
+            --text: #ffffff;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            overflow-x: hidden;
+        }
+
+        body {
+            background: linear-gradient(180deg, #071025 0%, #071827 100%);
+            color: #e6eef8;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            width: 100%;
+            padding: 0 8px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            word-break: break-word;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+            overflow: hidden;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button.small {
+            font-size: 12px;
+            padding: 4px 6px;
+            height: auto;
+        }
+
+        #list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+
+        #list:hover {
+            cursor: pointer;
+        }
+
+        .card {
+            background: var(--glass);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+            transition: transform 0.2s ease;
+
+            /* NEW: Fix size */
+            width: 100%;
+            /* let grid control width */
+            min-height: 120px;
+            /* fixed height for all cards */
+            max-height: 120px;
+            /* prevents expansion */
+            box-sizing: border-box;
+            overflow: hidden;
+            /* cut off overflowing content */
+        }
+
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .id {
+            font-weight: 700;
+            font-size: 13px;
+            word-break: break-word;
+            color: var(--text)
+        }
+
+        .price {
+            font-family: monospace;
+        }
+
+        .muted-small {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .json {
+            margin-top: 6px;
+            background: #07111a;
+            padding: 6px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+
+        .controls-bar input,
+        .controls-bar select,
+        .controls-bar button {
+            flex-shrink: 1;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        #q {
+            flex: 1 1 40px;
+            min-width: 100px;
+            height: auto;
+        }
+
+        .footer {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+
+        .grid-left {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .page {
+            display: inline-flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .pill {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            margin-left: 4px;
+        }
+
+        #settingsBtn {}
+
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .settings-content {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            width: 300px;
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .settings-content h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-row label {
+            font-size: 14px;
+        }
+
+        .settings-close {
+            background: var(--accent);
+            border: 1px solid transparent;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+
+            header,
+            .controls,
+            .controls-bar,
+            #list,
+            .footer {
+                padding: 0 4px;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                width: 100%;
+            }
+
+            input,
+            select,
+            button {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            #list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 18px;
+            }
+
+            .pill {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .small {
+                font-size: 11px;
+                padding: 4px 5px;
+            }
+
+            .controls input,
+            .controls select,
+            .controls button {
+                font-size: 11px;
+                padding: 4px 5px;
+                height: auto;
+            }
+        }
+
+        /* Toggle switch style */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #fff;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        input,
+        select,
+        button {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: inherit;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 0;
+            flex-shrink: 1;
+            box-sizing: border-box;
+            padding: 4px 8px;
+            line-height: 1.2;
+            height: auto;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        input:hover,
+        select:hover,
+        button:hover {
+            border: 1px solid var(--accent);
+        }
+
+        input:focus,
+        select:focus,
+        button:focus {
+            border: 1px solid var(--accent);
+        }
+
+        .card:hover {
+            transform: scale(1.03);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            /* below expanded card */
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .card.expanded {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            max-width: 700px;
+            max-height: 80vh;
+            /* scrollable if too tall */
+            overflow: auto;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            /* above overlay */
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+        }
+
+        @keyframes mc-obf {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: translateX(1px) translateY(-1px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateX(0) translateY(0);
+            }
+        }
+
+        .mc-obf {
+            display: inline-block;
+            animation: mc-obf 0.15s infinite;
+            letter-spacing: 0.5px;
+            font-family: inherit;
+        }
+
+        .mc-obf::before {
+            content: attr(data-obf);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <h1>Hypixel Skyblock Auctions — Viewer</h1>
+            <div class="muted">Fetches <code>https://api.hypixel.net/skyblock/auctions</code>. Enter API key if required.</div>
+        </div>
+
+        <div class="controls" style="margin-left:auto">
+            <div class="grid-left">
+                <label class="muted-small">API Key</label>
+                <input id="apiKey" placeholder="(optional) Hypixel API key" style="min-width:260px" class="hover" />
+            </div>
+
+            <div class="controls-bar">
+                <input id="q" placeholder="Search auction by item id or name" />
+                <select id="sort">
+                    <option value="highest">Sort: Highest Price</option>
+                    <option value="lowest">Sort: Lowest Price</option>
+                    <option value="ending">Sort: Ending Soon</option>
+                </select>
+                <button id="refresh" class="small">Refresh</button>
+                <button id="settingsBtn" class="small">Settings</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="pill muted-small">Showing <span id="count">0</span> auctions • Cached: <span id="cached">no</span></div>
+
+    <main id="list" aria-live="polite"></main>
+
+    <div class="footer">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px">
+            <div class="muted-small">If the fetch fails with a CORS/origin error, run this from a server or use a simple proxy. Cached data is saved locally.</div>
+            <div style="margin-left:auto" class="muted-small">Last updated: <span id="lastUpdated">—</span></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-content">
+            <h2>Settings</h2>
+
+            <div class="settings-row">
+                <label for="modalAutoRefresh">Auto Refresh</label>
+                <label class="switch">
+                    <input type="checkbox" id="modalAutoRefresh">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <label for="modalInterval">Interval (sec)</label>
+                <input type="number" id="modalInterval" value="30" style="width:60px">
+            </div>
+
+            <h3 style="margin-top: 15px;">Theme Colors</h3>
+
+            <div class="settings-row">
+                <label for="bgPicker">Background</label>
+                <input type="text" id="bgPicker" placeholder="e.g. #0f1724, rgb(15,23,36)">
+            </div>
+
+            <div class="settings-row">
+                <label for="cardPicker">Card</label>
+                <input type="text" id="cardPicker" placeholder="e.g. #0b1220, rgba(11,18,32,0.8)">
+            </div>
+
+            <div class="settings-row">
+                <label for="accentPicker">Text</label>
+                <input type="text" id="textPicker" placeholder="e.g. #60a5fa, rgb(96,165,250)">
+            </div>
+
+            <div class="settings-row">
+                <label for="mutedPicker">Text 2</label>
+                <input type="text" id="mutedPicker" placeholder="e.g. #94a3b8, lightgray">
+            </div>
+
+            <div class="settings-row">
+                <label for="accentPicker">Accent</label>
+                <input type="text" id="accentPicker" placeholder="e.g. #60a5fa, rgb(96,165,250)">
+            </div>
+
+            <button id="applyColors">Apply Colors</button>
+            <button id="resetColors">Reset Theme</button>
+            <button id="closeSettings" class="settings-close">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.hypixel.net/skyblock/auctions';
+        const LS_KEY = 'hypixel_auctions_cache_v7';
+
+        const apiKeyInput = document.getElementById('apiKey');
+        const qInput = document.getElementById('q');
+        const refreshBtn = document.getElementById('refresh');
+        const listEl = document.getElementById('list');
+        const countEl = document.getElementById('count');
+        const cachedEl = document.getElementById('cached');
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const sortSelect = document.getElementById('sort');
+
+        let lastResponse = [];
+        let countdownIntervals = [];
+        let currentPage = 0;
+        const PAGE_SIZE = 200;
+        let totalPages = 0;
+
+        // --- Helpers ---
+        function fmtNumber(n) {
+            return n == null ? '—' : n.toLocaleString();
+        }
+
+        function getAuctionName(a) {
+            return a?.item_name || 'Unknown';
+        }
+
+        function getCurrentBid(a) {
+            if (a.highest_bid_amount != null && a.highest_bid_amount > 0) return a.highest_bid_amount;
+            if (a.starting_bid != null) return a.starting_bid;
+            return 0;
+        }
+
+        function formatCountdown(ms) {
+            if (ms <= 0) return 'Ended';
+            const totalSec = Math.floor(ms / 1000);
+            const d = Math.floor(totalSec / 86400);
+            const h = Math.floor((totalSec % 86400) / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            return (d > 0 ? d + 'd ' : '') + (h > 0 ? h + 'h ' : '') + (m > 0 ? m + 'm ' : '') + s + 's';
+        }
+
+        function flashButtonMessage(btn, text) {
+            const old = btn.textContent;
+            btn.textContent = text;
+            setTimeout(() => btn.textContent = old, 800);
+        }
+        const escapeHtml = (s) => String(s === undefined || s === null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // --- Color & format maps (used by parser & rarity) ---
+        const minecraftColorMap = {
+            '0': '#000000',
+            '1': '#0000AA',
+            '2': '#00AA00',
+            '3': '#00AAAA',
+            '4': '#AA0000',
+            '5': '#AA00AA',
+            '6': '#FFAA00',
+            '7': '#AAAAAA',
+            '8': '#555555',
+            '9': '#5555FF',
+            'a': '#55FF55',
+            'b': '#55FFFF',
+            'c': '#FF5555',
+            'd': '#FF55FF',
+            'e': '#FFFF55',
+            'f': '#FFFFFF'
+        };
+
+        const rarityColors = {
+            'COMMON': '#ffffff',
+            'UNCOMMON': '#55ff55', // lime / light green
+            'RARE': '#5555ff', // normal blue
+            'EPIC': '#aa00aa', // purple
+            'LEGENDARY': '#ffaa00', // gold / orange
+            'MYTHIC': '#ff55ff', // light purple / pink
+            'SUPREME': '#55ffff', // light blue (not cyan)
+            'SPECIAL': '#ff5555', // red
+            'VERY SPECIAL': '#ff5555'
+        };
+
+
+        // --- Parse lore: supports § color & format codes, resets on color codes ---
+        // Produces HTML; obfuscated spans get class="mc-obf" and data-original attribute.
+        const fontStack = '"DejaVu Sans","Segoe UI Symbol","Noto Sans Symbols",monospace';
+
+        const obfChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()[]{}<>?/|\\'; // monospace-safe
+
+        function getRandomCharNoRepeat(prevChar) {
+            let char;
+            do {
+                char = obfChars.charAt(Math.floor(Math.random() * obfChars.length));
+            } while (char === prevChar && obfChars.length > 1);
+            return char;
+        }
+
+        function parseLoreToHtml(lore) {
+            if (!lore) return '';
+            const lines = Array.isArray(lore) ?
+                lore :
+                String(lore).split('\\n').flatMap(l => l.split('\n'));
+
+            const formatMap = {
+                'l': 'font-weight:bold;',
+                'm': 'text-decoration:line-through;',
+                'n': 'text-decoration:underline;',
+                'o': 'font-style:italic;',
+                'k': 'obfuscated' // handled separately
+            };
+
+            return lines.map(line => {
+                const parts = line.split(/(§[0-9a-fk-or])/gi);
+                let currentColor = '#ffffff';
+                let formats = new Set();
+                let html = '';
+
+                for (let part of parts) {
+                    if (!part) continue;
+                    const codeMatch = part.match(/^§([0-9a-fk-or])$/i);
+                    if (codeMatch) {
+                        const c = codeMatch[1].toLowerCase();
+                        if (c === 'r') {
+                            currentColor = '#ffffff';
+                            formats.clear();
+                        } else if (minecraftColorMap[c]) {
+                            currentColor = minecraftColorMap[c];
+                            formats.clear();
+                        } else if (formatMap[c]) {
+                            formats.add(c);
+                        }
+                        continue;
+                    }
+
+                    let safe = escapeHtml(part);
+
+                    let styleStr = '';
+                    let isObf = false;
+                    for (const f of formats) {
+                        if (formatMap[f] === 'obfuscated') isObf = true;
+                        else styleStr += formatMap[f];
+                    }
+
+                    const spanStyle = `color:${currentColor};${styleStr};font-family:${fontStack};`;
+
+                    if (isObf) {
+                        let prevChar = '';
+                        const obfText = Array.from(safe)
+                            .map(() => {
+                                const newChar = getRandomCharNoRepeat(prevChar);
+                                prevChar = newChar;
+                                return newChar;
+                            })
+                            .join('');
+                        html += `<span class="mc-obf" data-original="${safe}" style="${spanStyle}">${obfText}</span>`;
+                    } else {
+                        html += `<span style="${spanStyle}">${safe}</span>`;
+                    }
+                }
+
+                return html;
+            }).join('<br>');
+        }
+
+
+        // --- Obfuscation animation (single interval) ---
+        let _mcObfInterval = null;
+
+        function startObfuscationInterval() {
+            if (_mcObfInterval) return;
+            _mcObfInterval = setInterval(() => {
+                document.querySelectorAll('.mc-obf').forEach(el => {
+                    const original = el.dataset.original || el.textContent || '';
+                    const len = original.length;
+                    if (len === 0) return;
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&?';
+                    let out = '';
+                    for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+                    el.textContent = out;
+                });
+            }, 4);
+        }
+        // Start on script load (cards may appear later; interval harmless)
+        startObfuscationInterval();
+
+        // --- makeCard: builds compact card and modal with close + overlay + obf support ---
+        function makeCard(a) {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.style.position = 'relative';
+            const bid = getCurrentBid(a);
+            const endTime = a.end || 0;
+
+            // normalize tier
+            const rawTier = (a?.tier || a?.item_tier || '').toString();
+            const normTier = rawTier.replace(/[_\s]+/g, ' ').trim().toUpperCase();
+            const rarityColor = rarityColors[normTier] || '#ffffff';
+
+            const loreHtml = parseLoreToHtml(a?.item_lore);
+
+            // Compact card HTML
+            el.innerHTML = `
+    <div style="display:flex; flex-direction:column; height:100%; position:relative; padding:8px; box-sizing:border-box;">
+      <div class="id" style="font-weight:700; font-size:14px; color:${rarityColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        ${escapeHtml(getAuctionName(a))}
+      </div>
+
+      <div class="muted-small" style="white-space:nowrap; opacity:0.8; font-size:12px; margin-top:4px; overflow:hidden; text-overflow:ellipsis;">
+        ${escapeHtml(a?.auctioneer || 'Unknown')}
+      </div>
+
+      <div class="price" style="margin-top:8px; font-size:15px; font-weight:600; font-family:monospace;">
+        ${fmtNumber(bid)}
+      </div>
+
+      <div class="countdown muted-small" data-end="${endTime}" style="margin-top:auto; font-size:12px;">
+        Ends in: ${formatCountdown((a.end || 0) - Date.now())}
+      </div>
+
+      <button class="small copy-json" style="position:absolute; top:8px; right:8px;">Copy</button>
+    </div>
+  `;
+
+            // Copy button (compact)
+            const copyBtn = el.querySelector('.copy-json');
+            copyBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const command = `/viewauction ${a.uuid}`;
+                try {
+                    await navigator.clipboard.writeText(command);
+                    flashButtonMessage(copyBtn, 'Copied');
+                } catch (err) {
+                    flashButtonMessage(copyBtn, 'Fail');
+                }
+            });
+
+            // Expand modal on click
+            el.addEventListener('click', () => {
+                // overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'overlay';
+                Object.assign(overlay.style, {
+                    position: 'fixed',
+                    inset: '0',
+                    background: 'rgba(0,0,0,0.6)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                });
+                // modal
+                const expanded = document.createElement('div');
+                expanded.className = 'expanded-card';
+                Object.assign(expanded.style, {
+                    position: 'relative',
+                    background: 'var(--card)',
+                    color: 'var(--text)',
+                    border: '1px solid rgba(255,255,255,0.04)',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    maxWidth: '720px',
+                    width: '92%',
+                    maxHeight: '80vh',
+                    overflow: 'auto',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
+                    zIndex: 1001
+                });
+
+                expanded.innerHTML = `
+      <button class="close-btn" style="
+        position:absolute;
+        top:8px;
+        right:8px;
+        background:none;
+        border:none;
+        color:var(--text);
+        font-size:22px;
+        cursor:pointer;
+      ">&times;</button>
+
+      <button class="small copy-json" style="position:absolute; bottom:10px; right:10px;">Copy</button>
+
+      <h2 style="margin:0 0 8px 0;font-family:monospace; color:${rarityColor};">${escapeHtml(getAuctionName(a))}</h2>
+      <div style="margin-top:6px; white-space: nowrap; font-family:monospace; font-size:13px;">
+        ${loreHtml || '<i style="opacity:0.8">No lore available</i>'}
+      </div>
+      <hr style="border:0;border-top:1px solid rgba(255,255,255,0.04); margin:8px 0;">
+      <div style="margin-bottom:6px; font-family:monospace;"><strong>Auctioneer:</strong> ${escapeHtml(a?.auctioneer || 'Unknown')}</div>
+      <div style="margin-bottom:6px;font-family:monospace;"><strong>Current Bid:</strong> ${fmtNumber(getCurrentBid(a))}</div>
+      <div style="margin-bottom:8px;font-family:monospace;"><strong>Ends in:</strong> ${formatCountdown((a.end || 0) - Date.now())}</div>
+    `;
+
+                // append
+                overlay.appendChild(expanded);
+                document.body.appendChild(overlay);
+
+                // copy button inside modal
+                expanded.querySelector('.copy-json').addEventListener('click', async (ev) => {
+                    ev.stopPropagation();
+                    const command = `/viewauction ${a.uuid}`;
+                    try {
+                        await navigator.clipboard.writeText(command);
+                        flashButtonMessage(expanded.querySelector('.copy-json'), 'Copied');
+                    } catch (err) {
+                        flashButtonMessage(expanded.querySelector('.copy-json'), 'Fail');
+                    }
+                });
+
+                // close handlers: clicking overlay outside modal OR pressing X
+                function closeModal() {
+                    overlay.remove();
+                }
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) closeModal();
+                });
+                expanded.querySelector('.close-btn').addEventListener('click', closeModal);
+
+                // ensure obfuscated spans in modal get data-original and are animated
+                // (startObfuscationInterval already runs globally)
+                expanded.querySelectorAll('.mc-obf').forEach(elm => {
+                    if (!elm.dataset.original) elm.dataset.original = elm.textContent;
+                });
+            });
+
+            return el;
+        }
+
+        // --- Render current page ---
+        function renderPageOfAuctions() {
+            countdownIntervals.forEach(i => clearInterval(i));
+            countdownIntervals = [];
+            listEl.innerHTML = '';
+
+            const q = (qInput.value || '').trim().toLowerCase();
+            const sortBy = sortSelect.value;
+
+            let filtered = lastResponse.filter(a => {
+                if (!q) return true;
+                return (a.item_name && a.item_name.toLowerCase().includes(q)) ||
+                    (a.auctioneer && a.auctioneer.toLowerCase().includes(q));
+            });
+
+            filtered.sort((a, b) => {
+                if (sortBy === 'highest') return getCurrentBid(b) - getCurrentBid(a);
+                if (sortBy === 'lowest') return getCurrentBid(a) - getCurrentBid(b);
+                if (sortBy === 'ending') return (a.end || 0) - (b.end || 0);
+                return 0;
+            });
+
+            totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+            const pageAuctions = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+            pageAuctions.forEach(a => {
+                const card = makeCard(a);
+                listEl.appendChild(card);
+
+                // Live countdown
+                const countdownEl = card.querySelector('.countdown');
+
+                function updateCountdown() {
+                    countdownEl.textContent = 'Ends in: ' + formatCountdown((a.end || 0) - Date.now());
+                }
+                updateCountdown();
+                countdownIntervals.push(setInterval(updateCountdown, 1000));
+            });
+
+            countEl.textContent = filtered.length;
+            cachedEl.textContent = localStorage.getItem(LS_KEY) ? 'yes' : 'no';
+        }
+
+        // --- Pagination controls ---
+        function createPaginationControls() {
+            const footer = document.querySelector('.footer');
+            let pagEl = document.getElementById('pagination');
+            if (!pagEl) {
+                pagEl = document.createElement('div');
+                pagEl.id = 'pagination';
+                pagEl.style.marginTop = '10px';
+                pagEl.style.display = 'flex';
+                pagEl.style.gap = '6px';
+                pagEl.style.flexWrap = 'wrap';
+                pagEl.style.alignItems = 'center';
+                footer.appendChild(pagEl);
+            }
+            pagEl.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // Prev button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'small';
+            prevBtn.textContent = '⮜ Prev';
+            prevBtn.disabled = currentPage === 0;
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 0) {
+                    currentPage--;
+                    renderPageOfAuctions();
+                    createPaginationControls();
+                }
+            });
+            pagEl.appendChild(prevBtn);
+
+            // Current page display
+            const pageDisplay = document.createElement('span');
+            pageDisplay.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+            pageDisplay.style.margin = '0 8px';
+            pagEl.appendChild(pageDisplay);
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'small';
+            nextBtn.textContent = 'Next ⮞';
+            nextBtn.disabled = currentPage >= totalPages - 1;
+            nextBtn.addEventListener('click', () => {
+                if (currentPage < totalPages - 1) {
+                    currentPage++;
+                    renderPageOfAuctions();
+                    createPaginationControls();
+                }
+            });
+            pagEl.appendChild(nextBtn);
+
+            // Optional: jump-to-page input
+            const jumpInput = document.createElement('input');
+            jumpInput.type = 'number';
+            jumpInput.min = 1;
+            jumpInput.max = totalPages;
+            jumpInput.value = currentPage + 1;
+            jumpInput.style.width = '50px';
+            jumpInput.style.marginLeft = '8px';
+            jumpInput.addEventListener('change', () => {
+                const val = parseInt(jumpInput.value);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                    currentPage = val - 1;
+                    renderPageOfAuctions();
+                    createPaginationControls();
+                } else {
+                    jumpInput.value = currentPage + 1;
+                }
+            });
+            pagEl.appendChild(jumpInput);
+        }
+
+        // --- Fetch all pages progressively but faster ---
+        async function fetchAllAuctions(maxPages = 50, batchSize = 5) {
+            const key = (apiKeyInput.value || '').trim();
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = 'Loading...';
+            listEl.innerHTML = '';
+
+            let auctions = [];
+
+            try {
+                for (let batchStart = 0; batchStart < maxPages; batchStart += batchSize) {
+                    const batchPages = Array.from({
+                        length: Math.min(batchSize, maxPages - batchStart)
+                    }, (_, i) => batchStart + i);
+
+                    const batchPromises = batchPages.map(page => {
+                        let url = `${API_BASE}?page=${page}`;
+                        if (key) url += '&key=' + encodeURIComponent(key);
+                        return fetch(url, {
+                                cache: 'no-store'
+                            })
+                            .then(r => r.json())
+                            .then(res => {
+                                if (res.success && Array.isArray(res.auctions)) {
+                                    // Attach debug page number
+                                    res.auctions.forEach(a => a._debug_page = page);
+                                    return res.auctions;
+                                }
+                                return [];
+                            })
+                            .catch(e => {
+                                console.warn('page fetch fail', e);
+                                return [];
+                            });
+                    });
+
+                    const batchResults = await Promise.all(batchPromises);
+                    const batchAuctions = batchResults.flat();
+                    auctions = auctions.concat(batchAuctions);
+
+                    lastResponse = auctions;
+                    renderPageOfAuctions();
+                    createPaginationControls();
+                    await new Promise(r => setTimeout(r, 0));
+                }
+
+                localStorage.setItem(LS_KEY, JSON.stringify(auctions));
+                lastUpdatedEl.textContent = new Date().toLocaleTimeString();
+
+            } catch (e) {
+                console.warn('Failed fetch auctions:', e);
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = 'Refresh';
+            }
+        }
+
+        // --- Events ---
+        refreshBtn.addEventListener('click', () => {
+            currentPage = 0;
+            fetchAllAuctions();
+        });
+        qInput.addEventListener('input', () => {
+            currentPage = 0;
+            renderPageOfAuctions();
+            createPaginationControls();
+        });
+        sortSelect.addEventListener('change', () => {
+            currentPage = 0;
+            renderPageOfAuctions();
+            createPaginationControls();
+        });
+
+        // --- Init ---
+        (async () => {
+            const cached = localStorage.getItem(LS_KEY);
+            if (cached) {
+                lastResponse = JSON.parse(cached);
+                lastUpdatedEl.textContent = '(cached)';
+                renderPageOfAuctions();
+                createPaginationControls();
+            }
+            fetchAllAuctions();
+        })();
+    </script>
+</body>
+</html>
