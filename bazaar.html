@@ -184,6 +184,13 @@ input[type="number"] {
 .overlay.active {
   display: block;
 }
+.ellipsis {
+  max-width: 200px;  /* adjust based on your layout */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
 </style>
 </head>
 <body>
@@ -455,8 +462,8 @@ function makeCard(id, product){
   el.innerHTML = `
     <div class="row">
       <div>
-        <div class="id">${escapeHtml(itemName)}</div>
-        <div class="muted-small">${escapeHtml(id)}</div>
+        <div class="id ellipsis">${escapeHtml(itemName)}</div>
+        <div class="muted-small ellipsis">${escapeHtml(id)}</div>
       </div>
       <div style="text-align:right">
         <div class="price">${buy!==null?fmtNumber(buy):'—'}</div>
@@ -578,24 +585,35 @@ function renderProducts(productsObj){
           || itemName.toLowerCase().includes(q);
     });
 
-list.sort((a, b) => {
-  const sortBy = sortSelect.value;
-  let res = 0;
+list.sort((a,b)=>{
+  const getValue = (item) => {
+    if(sortBy==='id') return item.id;
+    if(sortBy==='buy') return getBuyPrice(item.product);
+    if(sortBy==='sell') return getSellPrice(item.product);
+    if(sortBy==='volume') return getVolume(item.product);
+    if(sortBy==='npc') return getNPCSell(item.product);
+    return 0;
+  };
 
-  if (sortBy === 'id') {
-    res = a.id.localeCompare(b.id);
-  } else if (sortBy === 'buy') {
-    res = (getBuyPrice(a.product) || 0) - (getBuyPrice(b.product) || 0);
-  } else if (sortBy === 'sell') {
-    res = (getSellPrice(a.product) || 0) - (getSellPrice(b.product) || 0);
-  } else if (sortBy === 'volume') {
-    res = (getVolume(a.product) || 0) - (getVolume(b.product) || 0);
-  } else if (sortBy === 'npc') {
-    res = (a.product.sellPriceMin || 0) - (b.product.sellPriceMin || 0);
+  const va = getValue(a);
+  const vb = getValue(b);
+
+  // only apply invalid-item rule for NPC sorting
+  if(sortBy === 'npc') {
+    const aInvalid = va === null || va === undefined || va === '-' || isNaN(va);
+    const bInvalid = vb === null || vb === undefined || vb === '-' || isNaN(vb);
+    if(aInvalid && !bInvalid) return 1;
+    if(bInvalid && !aInvalid) return -1;
+    if(aInvalid && bInvalid) return 0;
   }
 
-  return ascending ? res : -res; // apply ascending/descending
+  let res = 0;
+  if(sortBy==='id') res = a.id.localeCompare(b.id);
+  else res = (vb - va); // default numeric descending
+
+  return ascending ? res : -res;
 });
+
 
   const pageSize=DEFAULT_PAGE_SIZE;
   const slice=list.slice(0,pageSize);
