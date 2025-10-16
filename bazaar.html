@@ -203,10 +203,12 @@ input[type="number"] {
       <input id="q" placeholder="Search product id or name" />
       <select id="sort">
         <option value="id">Sort: Product ID</option>
-        <option value="buy">Sort: Buy Price (desc)</option>
-        <option value="sell">Sort: Sell Price (desc)</option>
-        <option value="volume">Sort: Volume (desc)</option>
+        <option value="buy">Sort: Buy Price</option>
+        <option value="sell">Sort: Sell Price</option>
+        <option value="volume">Sort: Volume</option>
+        <option value="npc">Sort: NPC Price</option>
       </select>
+      <button id="toggleSortOrder" class="small" style="min-width: 100px">Descending ↓</button>
       <button id="refresh" class="small">Refresh</button>
       <button id="settingsBtn" class="small">Settings</button>
     </div>
@@ -306,6 +308,41 @@ const sortSelect = document.getElementById('sort');
 let autoTimer = null;
 let lastResponse = null;
 let itemsMap = {};
+let npcData = {};
+let ascending = true;
+
+// Fetch NPC sell prices
+async function fetchNpcPrices() {
+  const cached = loadItemsCache(); // reuse your existing function
+  if (cached) {
+    for (const [id, name] of Object.entries(cached)) {
+      npcData[id] = null; // initialize with null
+    }
+  }
+
+  try {
+    const res = await fetch(ITEMS_API, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const json = await res.json();
+    if (json.items) {
+      for (const item of json.items) {
+        if (item.id && item.npc_sell_price !== undefined) {
+          npcData[item.id] = item.npc_sell_price;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to fetch NPC sell prices:', e);
+  }
+}
+const toggleSortBtn = document.getElementById('toggleSortOrder');
+
+toggleSortBtn.addEventListener('click', () => {
+  ascending = !ascending; // flip the order
+  toggleSortBtn.textContent = ascending ? 'Descending ↓' : 'Ascending ↑'; // update arrow
+
+  if (lastResponse) renderProducts(lastResponse); // re-render list
+});
 
 // --- Settings modal elements ---
 const settingsBtn = document.getElementById('settingsBtn');
@@ -413,6 +450,7 @@ function makeCard(id, product){
   const sell = getSellPrice(product);
   const vol = getVolume(product);
   const itemName = getDisplayName(id, product) || id;
+  const npcSell = npcData[id] ?? null;
 
   el.innerHTML = `
     <div class="row">
@@ -428,6 +466,7 @@ function makeCard(id, product){
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
       <div class="muted-small">sell: <strong>${sell!==null?fmtNumber(sell):'—'}</strong></div>
       <div class="muted-small">vol: <strong>${vol!==null?fmtNumber(vol):'—'}</strong></div>
+      <div class="muted-small">npc: <strong>${npcSell!==null?fmtNumber(npcSell):'—'}</strong></div>
       <div style="margin-left:auto;display:flex;gap:8px">
         <button class="small raw-toggle">Raw</button>
         <button class="small copy-json">Copy</button>
@@ -539,13 +578,24 @@ function renderProducts(productsObj){
           || itemName.toLowerCase().includes(q);
     });
 
-  list.sort((a,b)=>{
-    if(sortBy==='id') return a.id.localeCompare(b.id);
-    if(sortBy==='buy') return (getBuyPrice(b.product)||0)-(getBuyPrice(a.product)||0);
-    if(sortBy==='sell') return (getSellPrice(b.product)||0)-(getSellPrice(a.product)||0);
-    if(sortBy==='volume') return (getVolume(b.product)||0)-(getVolume(a.product)||0);
-    return 0;
-  });
+list.sort((a, b) => {
+  const sortBy = sortSelect.value;
+  let res = 0;
+
+  if (sortBy === 'id') {
+    res = a.id.localeCompare(b.id);
+  } else if (sortBy === 'buy') {
+    res = (getBuyPrice(a.product) || 0) - (getBuyPrice(b.product) || 0);
+  } else if (sortBy === 'sell') {
+    res = (getSellPrice(a.product) || 0) - (getSellPrice(b.product) || 0);
+  } else if (sortBy === 'volume') {
+    res = (getVolume(a.product) || 0) - (getVolume(b.product) || 0);
+  } else if (sortBy === 'npc') {
+    res = (a.product.sellPriceMin || 0) - (b.product.sellPriceMin || 0);
+  }
+
+  return ascending ? res : -res; // apply ascending/descending
+});
 
   const pageSize=DEFAULT_PAGE_SIZE;
   const slice=list.slice(0,pageSize);
@@ -613,6 +663,7 @@ sortSelect.addEventListener('change', ()=>{ if(lastResponse) renderProducts(last
 // --- Init ---
 (async()=>{
   await fetchItems();
+  await fetchNpcPrices();
   const cached=loadCache();
   if(cached){ lastUpdatedEl.textContent='(cached)'; renderProducts(cached); }
   fetchBazaar();
