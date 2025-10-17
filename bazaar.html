@@ -26,6 +26,7 @@ button.small{ font-size:12px; padding:4px 6px; height:auto; }
 .card{ background:var(--glass); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 6px 18px rgba(2,6,23,0.6); transition: transform 0.2s ease;}
 
 .row{ display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.row > div:first-child { flex: 1 1 auto; min-width: 0; }
 .id{ font-weight:700; font-size:13px; word-break:break-word; color:var(--text)}
 .price{ font-family:monospace; }
 .muted-small{ color:var(--muted); font-size:12px; }
@@ -185,11 +186,10 @@ input[type="number"] {
   display: block;
 }
 .ellipsis {
-  max-width: 200px;  /* adjust based on your layout */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
+  vertical-align: top;
 }
 </style>
 </head>
@@ -379,6 +379,13 @@ function fmtNumber(n){
     return Number(n).toFixed(2);
   }
 }
+function fmtSmallNumber(n){
+  if(n===null||n===undefined) return '—';
+  if(Math.abs(n)>=1e6) return (n/1e6).toFixed(2)+'M';
+  if(Math.abs(n)>=1e3) return (n/1e3).toFixed(1)+'k';
+  if(Number.isInteger(n)) return n.toString();
+  return Number(n).toFixed(2);
+}
 
 function getBuyPrice(product){ return (product.quick_status && product.quick_status.buyPrice) || (product.price && product.price.buy) || (product.buy_summary && product.buy_summary.length && product.buy_summary[0].price) || null; }
 function getSellPrice(product){ return (product.quick_status && product.quick_status.sellPrice) || (product.price && product.price.sell) || (product.sell_summary && product.sell_summary.length && product.sell_summary[0].price) || null; }
@@ -467,13 +474,16 @@ function makeCard(id, product){
       </div>
       <div style="text-align:right">
         <div class="price">${buy!==null?fmtNumber(buy):'—'}</div>
-        <div class="muted-small">buy</div>
+        <div class="muted-small">Buy</div>
+        <div class="price">${sell!==null?fmtNumber(sell):'—'}</div>
+        <div class="muted-small">Sell</div>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-      <div class="muted-small">sell: <strong>${sell!==null?fmtNumber(sell):'—'}</strong></div>
-      <div class="muted-small">vol: <strong>${vol!==null?fmtNumber(vol):'—'}</strong></div>
-      <div class="muted-small">npc: <strong>${npcSell!==null?fmtNumber(npcSell):'—'}</strong></div>
+      <div class="muted-small">buy: <strong>${buy!==null?fmtSmallNumber(buy):'—'}</strong></div>
+      <div class="muted-small">sell: <strong>${sell!==null?fmtSmallNumber(sell):'—'}</strong></div>
+      <div class="muted-small">vol: <strong>${vol!==null?fmtSmallNumber(vol):'—'}</strong></div>
+      <div class="muted-small">npc: <strong>${npcSell!==null?fmtSmallNumber(npcSell):'—'}</strong></div>
       <div style="margin-left:auto;display:flex;gap:8px">
         <button class="small raw-toggle">Raw</button>
         <button class="small copy-json">Copy</button>
@@ -585,34 +595,63 @@ function renderProducts(productsObj){
           || itemName.toLowerCase().includes(q);
     });
 
-list.sort((a,b)=>{
-  const getValue = (item) => {
-    if(sortBy==='id') return item.id;
-    if(sortBy==='buy') return getBuyPrice(item.product);
-    if(sortBy==='sell') return getSellPrice(item.product);
-    if(sortBy==='volume') return getVolume(item.product);
-    if(sortBy==='npc') return getNPCSell(item.product);
-    return 0;
+list.sort((a, b) => {
+  const sortBy = sortSelect.value;
+
+  // Helper to get npc price from npcData (global cached object)
+  const getNpcVal = (item) => {
+    // npcData keyed by item id; may be undefined/null
+    return (typeof npcData !== 'undefined') ? npcData[item.id] ?? null : null;
   };
 
-  const va = getValue(a);
-  const vb = getValue(b);
+  // Helper: returns true if value is a usable finite number
+  const isValidNum = (v) => {
+    if (v === null || v === undefined) return false;
+    if (v === '-') return false;
+    const n = Number(v);
+    return Number.isFinite(n);
+  };
 
-  // only apply invalid-item rule for NPC sorting
-  if(sortBy === 'npc') {
-    const aInvalid = va === null || va === undefined || va === '-' || isNaN(va);
-    const bInvalid = vb === null || vb === undefined || vb === '-' || isNaN(vb);
-    if(aInvalid && !bInvalid) return 1;
-    if(bInvalid && !aInvalid) return -1;
-    if(aInvalid && bInvalid) return 0;
+  // Helper: numeric extractor for each sort type
+  const extract = (entry) => {
+    const prod = entry.product;
+    if (sortBy === 'buy') return getBuyPrice(prod);
+    if (sortBy === 'sell') return getSellPrice(prod);
+    if (sortBy === 'volume') return getVolume(prod);
+    if (sortBy === 'npc') return getNpcVal(entry);
+    return null;
+  };
+
+  // ID sorting is special (string)
+  if (sortBy === 'id') {
+    const res = a.id.localeCompare(b.id);
+    return ascending ? res : -res;
   }
 
-  let res = 0;
-  if(sortBy==='id') res = a.id.localeCompare(b.id);
-  else res = (vb - va); // default numeric descending
+  // For numeric sorts:
+  const vaRaw = extract(a);
+  const vbRaw = extract(b);
 
+  const vaValid = isValidNum(vaRaw);
+  const vbValid = isValidNum(vbRaw);
+
+  // Apply "move invalid to bottom" rule only for buy, sell, npc
+  if (['buy','sell','npc'].includes(sortBy)) {
+    if (!vaValid && vbValid) return 1;   // a invalid -> after b
+    if (!vbValid && vaValid) return -1;  // b invalid -> after a
+    if (!vaValid && !vbValid) return 0;  // both invalid -> equal
+  }
+  // If we reach here and value(s) invalid (e.g. volume) fall back to treating as 0
+  const va = vaValid ? Number(vaRaw) : (vaRaw === null || vaRaw === undefined ? -Infinity : Number(vaRaw));
+  const vb = vbValid ? Number(vbRaw) : (vbRaw === null || vbRaw === undefined ? -Infinity : Number(vbRaw));
+
+  // Numerical comparison (a - b) then flipped by ascending flag
+  const res = va - vb;
+  // Default behaviour in your previous code was descending — we keep consistent:
+  // return ascending ? res : -res;
   return ascending ? res : -res;
 });
+
 
 
   const pageSize=DEFAULT_PAGE_SIZE;
