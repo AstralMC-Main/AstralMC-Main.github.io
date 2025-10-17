@@ -23,9 +23,9 @@ button.small{ font-size:12px; padding:4px 6px; height:auto; }
 #list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:10px; margin-top:12px; padding:0 4px; box-sizing:border-box; }
 #list:hover{ cursor:pointer; }
 
-.card{ background:var(--glass); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 6px 18px rgba(2,6,23,0.6); transition: transform 0.2s ease;}
+.card{ background:var(--glass); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 6px 18px rgba(2,6,23,0.6); transition: 0.2s ease;}
 
-.row{ display:flex; justify-content:space-between; align-items:center; gap:6px; }
+.row{ display:flex; justify-content:space-between; align-items:top; gap:6px; }
 .row > div:first-child { flex: 1 1 auto; min-width: 0; }
 .id{ font-weight:700; font-size:13px; word-break:break-word; color:var(--text)}
 .price{ font-family:monospace; }
@@ -160,6 +160,7 @@ input[type="number"] {
 
 .card:hover {
   transform: scale(1.03);
+  border:1px solid var(--accent);
 }
 
 .card.expanded {
@@ -190,6 +191,29 @@ input[type="number"] {
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: top;
+}
+.hidden {
+  display: none;
+}
+.line {
+  border: none;
+  border-radius: 5px;
+  height: 1px;
+  background: #60a5fa;
+  margin: 1px 0;
+  transform: scaleX(0);
+  transition:0.2s;
+}
+.card:hover .line {
+  transform: scaleX(1);
+}
+.animated-text {
+  max-height: 0;
+  transition: 0.7s;
+  overflow: hidden;
+}
+.card:hover .animated-text{
+  max-height: 15px;
 }
 </style>
 </head>
@@ -234,7 +258,6 @@ input[type="number"] {
 </div>
 
 <!-- Settings Modal -->
-<!-- Settings Modal -->
 <div id="settingsModal" class="settings-modal">
   <div class="settings-content">
     <h2>Settings</h2>
@@ -259,6 +282,14 @@ input[type="number"] {
         <span class="slider"></span>
       </label>
     </div>
+
+<div class="settings-row">
+  <label for="toggleRawCopy">Show Raw & Copy Buttons</label>
+  <label class="switch">
+    <input type="checkbox" id="toggleRawCopy">
+    <span class="slider"></span>
+  </label>
+</div>
 
     <h3 style="margin-top: 15px;">Theme Colors</h3>
 
@@ -317,7 +348,18 @@ let lastResponse = null;
 let itemsMap = {};
 let npcData = {};
 let ascending = true;
+const toggleRawCopy = document.getElementById('toggleRawCopy');
 
+toggleRawCopy.addEventListener('change', () => {
+  const show = toggleRawCopy.checked;
+  document.querySelectorAll('.hidden-switch').forEach(el => {
+    if (show) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+});
 // Fetch NPC sell prices
 async function fetchNpcPrices() {
   const cached = loadItemsCache(); // reuse your existing function
@@ -474,9 +516,11 @@ function makeCard(id, product){
       </div>
       <div style="text-align:right">
         <div class="price">${buy!==null?fmtNumber(buy):'—'}</div>
-        <div class="muted-small">Buy</div>
+        <hr class="line">
+        <div class="muted-small animated-text">Buy</div>
         <div class="price">${sell!==null?fmtNumber(sell):'—'}</div>
-        <div class="muted-small">Sell</div>
+        <hr class="line">
+        <div class="muted-small animated-text">Sell</div>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
@@ -485,8 +529,8 @@ function makeCard(id, product){
       <div class="muted-small">vol: <strong>${vol!==null?fmtSmallNumber(vol):'—'}</strong></div>
       <div class="muted-small">npc: <strong>${npcSell!==null?fmtSmallNumber(npcSell):'—'}</strong></div>
       <div style="margin-left:auto;display:flex;gap:8px">
-        <button class="small raw-toggle">Raw</button>
-        <button class="small copy-json">Copy</button>
+        <button class="small raw-toggle hidden hidden-switch">Raw</button>
+        <button class="small copy-json hidden hidden-switch">Copy</button>
       </div>
     </div>
     <pre class="json"></pre>
