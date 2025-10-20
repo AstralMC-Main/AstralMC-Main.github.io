@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SkyBlock Profit Calculator</title>
+<style>
+  :root { 
+    --bg:#0f1724; --card:#0b1220; --muted:#94a3b8; --accent:#60a5fa; 
+    --switch-on:#60a5fa; --switch-off:#4b5563; 
+  }
+  body { background:var(--bg); color:#e6eef8; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:18px; }
+  h1 { margin:0 0 12px; font-size:26px; }
+
+  .card { background:var(--card); padding:18px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.6); margin-bottom:18px; }
+
+  .muted { color:var(--muted); }
+  .small { font-size:12px; color:var(--muted); }
+
+  button { background:var(--accent); border:none; color:white; padding:8px 12px; border-radius:6px; cursor:pointer; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+  .controls {
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; align-items:center;
+  }
+  .controls input[type="text"], .controls input[type="number"] {
+    padding:6px 8px; border-radius:8px; border:1px solid #4b5563; background:#0b1220; color:#e6eef8; transition: 0.3s;
+  }
+    .controls input[type="text"]:hover, .controls input[type="number"]:hover, .controls input[type="text"]:focus, .controls input[type="number"]:focus {
+    padding:6px 8px; border-radius:8px; border:1px solid var(--accent); background:#0b1220; color:#e6eef8; outline: none; box-shadow: 0px 0px 3px var(--accent);
+  }
+  
+  .controls input[type="number"] { width:auto; }
+
+  .switch-container { display:flex; align-items:center; }
+  .switch-label { margin-right:8px; font-size:14px; color:var(--muted); }
+  .switch { position:relative; display:inline-block; width:40px; height:20px; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:var(--switch-off); transition:.4s; border-radius:34px; }
+  .slider:before { content:""; position:absolute; height:12px; width:12px; border-radius:50%; left:4px; bottom:4px; background-color:white; transition:.4s; }
+  input:checked + .slider { background-color:var(--switch-on); }
+  input:checked + .slider:before { transform:translateX(20px); }
+
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+  th, td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04); text-align:left; }
+  th { position:sticky; top:0; background:#071323; cursor:pointer; }
+
+  .good { color:#7ee787; font-weight:600; }
+  .bad { color:#ff8a8a; font-weight:600; }
+
+  .notice { background:#08212c; padding:8px; border-radius:6px; color:#bcd8ff; margin-top:8px; }
+
+  .tooltip { position:relative; cursor:help; }
+  .tooltip:hover::after { content: attr(data-tip); position:absolute; left:0; top:120%; white-space:pre; background:#07131b; color:#e6eef8; padding:8px; border-radius:6px; z-index:1000; min-width:220px; box-shadow:0 6px 20px rgba(0,0,0,0.6); }
+
+  /* Specific widths for number inputs */
+  #maxPages { width:70px; margin-left:6px; }
+  #concurrency { width:60px; margin-left:6px; }
+  #searchInput { min-width:150px; }
+  #status { margin-left:auto; }
+</style>
+
+<h1>SkyBlock Profit Calculator</h1>
+
+<div class="card">
+  <div class="small muted">
+    Phase 1: Bazaar-only results appear immediately. Phase 2: Background auction checks (BIN → bid) run ONCE for items that need them.
+  </div>
+
+  <div class="controls">
+    <button id="runBtn">Run Analysis</button>
+    <button id="top50Btn">Top 50</button>
+    <button id="exportCsv">Export CSV</button>
+
+    <input type="text" id="searchInput" placeholder="Search items..." />
+
+    <div class="switch-container">
+      <label for="hideInvalidSwitch" class="switch-label">Hide Invalid</label>
+      <label class="switch">
+        <input type="checkbox" id="hideInvalidSwitch">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <label class="small">Max auction pages / item:
+      <input id="maxPages" type="number" value="8" min="1" max="50" />
+    </label>
+
+    <label class="small">Auction concurrency:
+      <input id="concurrency" type="number" value="3" min="1" max="12"/>
+    </label>
+
+    <div class="small muted" id="status">Idle</div>
+  </div>
+
+  <div id="notes" class="notice" style="display:none"></div>
+</div>
+
+<div class="card" id="resultsCard" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><strong>Results</strong> <span class="small muted" id="summary"></span></div>
+    <div class="small muted">Click headers to sort (auction columns update live)</div>
+  </div>
+
+  <div style="overflow:auto;max-height:64vh;margin-top:8px">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th data-key="item">Item</th>
+          <th data-key="craftBazaar">Craft Cost (Bazaar)</th>
+          <th data-key="sellBazaar">Sell (Bazaar)</th>
+          <th data-key="profitBazaar">Profit (Bazaar)</th>
+          <th data-key="craftAuction">Craft Cost (Auction)</th>
+          <th data-key="sellAuction">Sell (Auction)</th>
+          <th data-key="profitAuction">Profit (Auction)</th>
+          <th data-key="notes">Notes</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const el = s=>document.querySelector(s);
+
+// Hide invalid rows (craftBazaar = -)
+document.getElementById('hideInvalidSwitch').addEventListener('change', function() {
+  const hideInvalid = this.checked;
+  const rows = document.querySelectorAll('#resultsTable tbody tr');
+  rows.forEach(row => {
+    const craftVal = row.children[1].textContent.trim();
+    row.style.display = (hideInvalid && craftVal === '-') ? 'none' : '';
+  });
+});
+
+// Search filter
+document.getElementById('searchInput').addEventListener('input', function() {
+  const term = this.value.toLowerCase();
+  const rows = document.querySelectorAll('#resultsTable tbody tr');
+  rows.forEach(row => {
+    const name = row.children[0].textContent.toLowerCase();
+    row.style.display = name.includes(term) ? '' : 'none';
+  });
+});
+
+const URLS = {
+  mappings: 'https://raw.githubusercontent.com/kr45732/skyblock-plus-data/refs/heads/main/InternalNameMappings.json',
+  bazaar: 'https://api.hypixel.net/skyblock/bazaar',
+  items: 'https://api.hypixel.net/resources/skyblock/items',
+  auctions: 'https://api.hypixel.net/skyblock/auctions'
+};
+
+function priceBazaarBuyOffer(prod){ return (typeof prod?.quick_status?.buyPrice==='number')?prod.quick_status.buyPrice:(prod?.buy_summary?.[0]?.pricePerUnit??null); }
+function priceBazaarSellOffer(prod){ return (typeof prod?.quick_status?.sellPrice==='number')?prod.quick_status.sellPrice:(prod?.sell_summary?.[0]?.pricePerUnit??null); }
+function human(n){ return typeof n==='number' ? n.toLocaleString(undefined,{maximumFractionDigits:2}) : 'N/A'; }
+async function fetchJson(url){ const r=await fetch(url); if(!r.ok)throw new Error(url+' '+r.status); return r.json(); }
+function parseRecipeGrid(recipe){
+  const map={}; if(!recipe)return map;
+  for(const v of Object.values(recipe)){ if(!v || typeof v!=='string') continue; const [raw,cnt]=v.split(':'); const id=(raw||'').toUpperCase().replace(/^minecraft:/i,'').replace(/\s+/g,'_'); map[id]=(map[id]||0)+Math.max(1,Number(cnt)||1); }
+  return map;
+}
+
+// Auto-run + compute
+async function runOnce(topN=null){
+  el('#notes').style.display='none'; el('#resultsCard').style.display='none'; el('#status').textContent='Loading mappings & bazaar...';
+  try{
+    const [mappingsRaw,bazaarRaw,itemsRaw]=await Promise.all([fetchJson(URLS.mappings),fetchJson(URLS.bazaar),fetchJson(URLS.items)]);
+    const mappings={}; for(const [k,v] of Object.entries(mappingsRaw)) mappings[k.toUpperCase()]=v;
+    const bazaarMap={}; for(const [k,v] of Object.entries(bazaarRaw.products||bazaarRaw)) bazaarMap[k.toUpperCase()]=v;
+    const itemsMeta=itemsRaw.items||itemsRaw||[];
+
+    el('#status').textContent='Resolving Bazaar-only craft costs...';
+    const results=[]; const tbody=el('#resultsTable tbody'); tbody.innerHTML='';
+for (const [id, info] of Object.entries(mappings)) {
+  if (!info.recipe) continue;
+
+  const recipeMap = parseRecipeGrid(info.recipe);
+
+  // Craft cost = sum of raw materials' BUY OFFER
+  let craftBazaar = 0, needsAuction = false;
+  for (const [ing, qty] of Object.entries(recipeMap)) {
+    const mat = bazaarMap[ing];
+    if (!mat) { needsAuction = true; craftBazaar = null; break; }
+    craftBazaar += priceBazaarBuyOffer(mat) * qty;
+  }
+
+  const prod = bazaarMap[id];
+  const sellBazaar = prod ? priceBazaarBuyOffer(prod) : null;
+
+  // Profit: treat null as 0
+  const profitBazaar = ((sellBazaar ?? 0) - (craftBazaar ?? 0));
+
+  // Tooltip with recipe info
+  let tip = '';
+  for (const [ing, qty] of Object.entries(recipeMap)) {
+    const mat = bazaarMap[ing];
+    tip += `${qty} × ${ing} — ${mat ? 'Bazaar' : 'No Bazaar (may need auction)'}\n`;
+  }
+
+  const entry = {
+    item: id,
+    name: info.name || id,
+    craftBazaar,
+    sellBazaar,
+    profitBazaar,
+    craftAuction: null,
+    sellAuction: null,
+    profitAuction: null,
+    needsAuction
+  };
+  results.push(entry);
+
+  const tr = document.createElement('tr');
+  tr.id = 'row_' + id;
+  tr.innerHTML = `
+<td class="tooltip" data-tip="${tip.replace(/"/g, '')}">${entry.name}</td>
+<td>${craftBazaar == null ? '-' : human(craftBazaar)}</td>
+<td>${sellBazaar == null ? '-' : human(sellBazaar)}</td>
+<td>${profitBazaar == null ? '<span class="bad">0</span>' : (profitBazaar >= 0 ? `<span class="good">+${human(profitBazaar)}</span>` : `<span class="bad">${human(profitBazaar)}</span>`)}</td>
+<td id="craftAuction_${id}">—</td>
+<td id="sellAuction_${id}">—</td>
+<td id="profitAuction_${id}">—</td>
+<td>${needsAuction ? '<span class="small muted">needs auction</span>' : ''}</td>`;
+  tbody.appendChild(tr);
+}
+
+    // auto-sort by profitBazaar descending
+    const sortedRows = Array.from(tbody.querySelectorAll('tr'));
+    sortedRows.sort((a,b)=>{
+      const aVal=parseFloat(a.children[3].textContent.replace(/[,+]/g,''))||0;
+      const bVal=parseFloat(b.children[3].textContent.replace(/[,+]/g,''))||0;
+      return bVal - aVal;
+    });
+    tbody.innerHTML=''; sortedRows.forEach(r=>tbody.appendChild(r));
+
+    el('#resultsCard').style.display=''; el('#summary').textContent=`Rendered ${results.length} craftable items (Bazaar-only).`;
+
+    // Phase 2: background auction checks
+    const pagesLimit=Math.max(1,Number(el('#maxPages').value)||8);
+    const concurrency=Math.max(1,Number(el('#concurrency').value)||3);
+    const toProcess=results.filter(r=>r.needsAuction);
+    if(toProcess.length>0){
+      el('#status').textContent=`Auction: fetching ${toProcess.length} items...`;
+      let idx=0;
+      const runWorker=async()=>{
+        while(true){
+          const i=idx++; if(i>=toProcess.length) break;
+          const item=toProcess[i];
+          try{
+            const leafPrice=await computeAuctionForItemIterative(item.item,mappings,bazaarMap,itemsMeta,pagesLimit);
+            const meta=itemsMeta.find(x=>x.id===item.item)||{}; const display=meta.name||mappings[item.item]?.name||item.item;
+            const auc=await fetchAuctionsForItemLimited(item.item,display,pagesLimit).catch(()=>null);
+            const sellAuction=auc&&auc.best!=null?auc.best:null;
+            const profitAuction=(leafPrice!=null&&sellAuction!=null)?sellAuction-leafPrice:null;
+            item.craftAuction=leafPrice; item.sellAuction=sellAuction; item.profitAuction=profitAuction;
+            const craftTd=el('#craftAuction_'+item.item); const sellTd=el('#sellAuction_'+item.item); const profTd=el('#profitAuction_'+item.item);
+            if(craftTd) craftTd.innerHTML=leafPrice==null?'N/A':human(leafPrice);
+            if(sellTd) sellTd.innerHTML=sellAuction==null?'N/A':human(sellAuction);
+            if(profTd) profTd.innerHTML=profitAuction==null?'N/A':(profitAuction>=0?`<span class="good">+${human(profitAuction)}</span>`:`<span class="bad">${human(profitAuction)}</span>`);
+          }catch(e){ console.warn('auction error',e);}
+        }
+      };
+      const workers=[]; for(let w=0;w<concurrency;w++) workers.push(runWorker());
+      await Promise.all(workers); el('#status').textContent='Background auction checks finished.';
+    } else el('#status').textContent='No auction checks needed.';
+    window.__sbp_results=results;
+
+  }catch(err){ el('#notes').style.display='block'; el('#notes').textContent='Error: '+(err.message||err); el('#status').textContent='Error'; console.error(err);}
+}
+
+// Auction helper functions
+function auctionMatches(auction, displayName, internal){ const hay=((auction.item_name||'')+' '+(auction.item_lore||'')+' '+(auction.name||'')).toLowerCase(); return (displayName && hay.includes(displayName.toLowerCase())) || (internal && hay.includes(internal.toLowerCase())); }
+async function fetchAuctionsForItemLimited(itemId, displayName, pagesLimit=8){
+  let bestBin=null,bestBid=null,page=0;
+  while(page<pagesLimit){
+    try{
+      const res=await fetch(URLS.auctions+'?page='+page); if(!res.ok) break;
+      const j=await res.json(); const auctions=j.auctions||[];
+      for(const a of auctions){ if(auctionMatches(a, displayName, itemId)){ if(a.bin){ const p=Number(a.starting_bid??0); if(p>0&&(bestBin==null||p<bestBin)) bestBin=p; } else { const p=Number(a.highest_bid_amount??0); if(p>0&&(bestBid==null||p<bestBid)) bestBid=p; } } }
+      if(j.totalPages&&page>=j.totalPages-1) break; page++; await new Promise(r=>setTimeout(r,140));
+    }catch(e){ break; }
+  }
+  return { bestBin, bestBid, best: bestBin!=null?bestBin:bestBid };
+}
+async function computeAuctionForItemIterative(rootItemId,mappings,bazaarMap,itemsMeta,pagesLimit){
+  const needLeaves=new Set(); const q=[rootItemId]; const visited=new Set();
+  while(q.length){ const id=q.shift(); if(visited.has(id)) continue; visited.add(id); const entry=mappings[id]; const rec=entry?.recipe?parseRecipeGrid(entry.recipe):null; if(!rec){ if(!bazaarMap[id]) needLeaves.add(id); continue; } for(const ing of Object.keys(rec)) q.push(ing); }
+  const leafPrices={};
+  for(const leaf of needLeaves){ const meta=itemsMeta.find(x=>x.id===leaf)||{}; const display=meta.name||mappings[leaf]?.name||leaf; const auc=await fetchAuctionsForItemLimited(leaf,display,pagesLimit).catch(()=>null); leafPrices[leaf]=auc&&auc.best!=null?auc.best:null; }
+  const nodes=new Set(); const q2=[rootItemId]; while(q2.length){ const id=q2.shift(); if(nodes.has(id)) continue; nodes.add(id); const rec=mappings[id]?.recipe?parseRecipeGrid(mappings[id].recipe):null; if(rec) for(const ing of Object.keys(rec)) q2.push(ing); }
+  const known={}; for(const id of nodes){ if(!mappings[id]||!mappings[id].recipe){ if(leafPrices[id]!=null) known[id]=leafPrices[id]; else if(bazaarMap[id]) known[id]=priceBazaarBuyOffer(bazaarMap[id]); else known[id]=null; } }
+  let progress=true, iter=0;
+  while(progress&&iter<1000){ progress=false; iter++; for(const id of nodes){ if(known[id]!=null) continue; const rec=mappings[id]?.recipe?parseRecipeGrid(mappings[id].recipe):null; if(!rec) continue; let allKnown=true,sum=0; for(const [ing,qty] of Object.entries(rec)){ const val=known[ing]; if(val==null){allKnown=false;break;} sum+=val*qty; } if(allKnown){known[id]=sum; progress=true;} } }
+  return known[rootItemId]==null?null:known[rootItemId];
+}
+
+// UI bindings
+el('#runBtn').onclick=()=>{el('#resultsCard').style.display='none'; runOnce();};
+el('#top50Btn').onclick=()=>{if(window.__sbp_results){const tbody=el('#resultsTable tbody'); tbody.innerHTML=''; window.__sbp_results.slice(0,50).forEach(r=>{ const tr=document.getElementById('row_'+r.item); if(tr) tbody.appendChild(tr);});}};
+el('#exportCsv').onclick=()=>{
+  if(!window.__sbp_results)return;
+  let csv='Item,CraftBazaar,SellBazaar,ProfitBazaar,CraftAuction,SellAuction,ProfitAuction\n';
+  for(const r of window.__sbp_results) csv+=`"${r.name}",${r.craftBazaar??''},${r.sellBazaar??''},${r.profitBazaar??''},${r.craftAuction??''},${r.sellAuction??''},${r.profitAuction??''}\n`;
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='skyblock_profit.csv'; a.click(); URL.revokeObjectURL(url);
+};
+
+// Auto-run on page load
+runOnce();
+
+</script>
+</body>
+</html>
