@@ -216,37 +216,39 @@ for (const [id, info] of Object.entries(mappings)) {
 
   const recipeMap = parseRecipeGrid(info.recipe);
 
-  // Craft cost = sum of raw materials' BUY OFFER
-// Craft cost = sum of raw materials' BUY OFFER, using 2-step base material calculation
-let craftBazaar = 0;
-for (const [ing, qty] of Object.entries(recipeMap)) {
-  const cost = getBaseMaterialCost(ing, qty, 0, bazaarMap);
-  craftBazaar += cost;
-}
+  let craftBazaar = 0;
+  let needsAuction = false;
 
-// If any ingredient requires auction (cannot find a bazaar/base cost), mark needsAuction
-let needsAuction = Object.entries(recipeMap).some(([ing]) => {
-  return getBaseMaterialCost(ing, 1, 0, bazaarMap) === 0 && !bazaarMap[ing];
-});
-if (craftBazaar === 0) craftBazaar = null;
+  // Build tooltip dynamically
+  let tip = '';
 
+  for (const [ing, qty] of Object.entries(recipeMap)) {
+    // Recursive base material cost
+    const cost = getBaseMaterialCost(ing, qty, 0, bazaarMap);
+
+    // Add to craft cost
+    craftBazaar += cost ?? 0;
+
+    // If cost is null, mark needs auction
+    if (cost === null) needsAuction = true;
+
+    // Add tooltip entry WITHOUT "may need auction"
+    tip += `${qty} × ${ing}\n`;
+  }
+
+  // If all costs are zero, treat as null
+  if (craftBazaar === 0) craftBazaar = null;
+
+  // Append "may need auction" to tooltip only if something is missing
+  if (needsAuction) tip = tip.replace(/\n$/,'') + ' — No Bazaar (may need auction)\n';
 
   const prod = bazaarMap[id];
   const sellBazaar = prod ? priceBazaarBuyOffer(prod) : null;
 
-  // Use Hypixel API's weekly moving average stats
   const buyWeek = prod?.quick_status?.buyMovingWeek ?? null;
   const sellWeek = prod?.quick_status?.sellMovingWeek ?? null;
 
-  // Profit: treat null as 0
   const profitBazaar = ((sellBazaar ?? 0) - (craftBazaar ?? 0));
-
-  // Tooltip with recipe info
-  let tip = '';
-  for (const [ing, qty] of Object.entries(recipeMap)) {
-    const mat = bazaarMap[ing];
-    tip += `${qty} × ${ing} — ${mat ? 'Bazaar' : 'No Bazaar (may need auction)'}\n`;
-  }
 
   const entry = {
     item: id,
@@ -269,7 +271,7 @@ if (craftBazaar === 0) craftBazaar = null;
   tr.id = 'row_' + id;
 
   tr.innerHTML = `
-<td class="tooltip" data-tip="${tip.replace(/"/g, '')}">${entry.name}</td>
+<td class="tooltip" data-tip="${tip.replace(/"/g,'')}">${entry.name}</td>
 <td>${craftBazaar == null ? '-' : human(craftBazaar)}</td>
 <td>${sellBazaar == null ? '-' : human(sellBazaar)}</td>
 <td>${profitBazaar == null ? '<span class="bad">0</span>' : (profitBazaar >= 0 ? `<span class="good">+${human(profitBazaar)}</span>` : `<span class="bad">${human(profitBazaar)}</span>`)}</td>
