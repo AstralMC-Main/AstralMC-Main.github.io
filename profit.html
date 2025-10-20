@@ -54,7 +54,7 @@ input[type=number]::-webkit-outer-spin-button {
   .notice { background:#08212c; padding:8px; border-radius:6px; color:#bcd8ff; margin-top:8px; }
 
   .tooltip { position:relative; cursor:help; }
-  .tooltip:hover::after { content: attr(data-tip); position:absolute; left:0; top:120%; white-space:pre; background:#07131b; color:#e6eef8; padding:8px; border-radius:6px; z-index:1000; min-width:220px; box-shadow:0 6px 20px rgba(0,0,0,0.6); }
+  .tooltip:hover::after { content: attr(data-tip); position:absolute; left:0; top:120%; white-space:pre; background:#07131b; color:#e6eef8; padding:8px; border-radius:6px;z-index: 1; min-width:220px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border: 1px solid var(--accent); }
 
   /* Specific widths for number inputs */
   #maxPages { width:70px; margin-left:6px; }
@@ -109,14 +109,18 @@ input[type=number]::-webkit-outer-spin-button {
     <table id="resultsTable">
       <thead>
         <tr>
-          <th data-key="item">Item</th>
-          <th data-key="craftBazaar">Craft Cost (Bazaar)</th>
-          <th data-key="sellBazaar">Sell (Bazaar)</th>
-          <th data-key="profitBazaar">Profit (Bazaar)</th>
+          <th data-key="item" style="z-index: 2;">Item</th>
+          <th data-key="craftBazaar" style="z-index: 2;">Craft Cost (Bazaar)</th>
+          <th data-key="sellBazaar" style="z-index: 2;">Sell (Bazaar)</th>
+          <th data-key="profitBazaar" style="z-index: 2;">Profit (Bazaar)</th>
+          <th data-key="sellWceek" style="z-index: 2;">Weekly Sell</th>
+          <th data-key="buyWeek" style="z-index: 2;">Weekly Buy</th>
+<!-- Hidden for now
           <th data-key="craftAuction">Craft Cost (Auction)</th>
           <th data-key="sellAuction">Sell (Auction)</th>
           <th data-key="profitAuction">Profit (Auction)</th>
-          <th data-key="notes">Notes</th>
+-->
+          <th data-key="notes" style="z-index: 2;">Notes</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -191,6 +195,9 @@ for (const [id, info] of Object.entries(mappings)) {
   const prod = bazaarMap[id];
   const sellBazaar = prod ? priceBazaarBuyOffer(prod) : null;
 
+  const buyWeek = prod?.quick_status?.buyMovingWeek ?? null;
+  const sellWeek = prod?.quick_status?.sellMovingWeek ?? null;
+
   // Profit: treat null as 0
   const profitBazaar = ((sellBazaar ?? 0) - (craftBazaar ?? 0));
 
@@ -207,9 +214,13 @@ for (const [id, info] of Object.entries(mappings)) {
     craftBazaar,
     sellBazaar,
     profitBazaar,
+/* Hidden for now
     craftAuction: null,
     sellAuction: null,
     profitAuction: null,
+*/
+    buyWeek,
+    sellWeek,
     needsAuction
   };
   results.push(entry);
@@ -221,9 +232,13 @@ for (const [id, info] of Object.entries(mappings)) {
 <td>${craftBazaar == null ? '-' : human(craftBazaar)}</td>
 <td>${sellBazaar == null ? '-' : human(sellBazaar)}</td>
 <td>${profitBazaar == null ? '<span class="bad">0</span>' : (profitBazaar >= 0 ? `<span class="good">+${human(profitBazaar)}</span>` : `<span class="bad">${human(profitBazaar)}</span>`)}</td>
+<td>${entry.buyWeek==null ? '-' : human(entry.buyWeek)}</td>
+<td>${entry.sellWeek==null ? '-' : human(entry.sellWeek)}</td>
+<!-- Hidden for now
 <td id="craftAuction_${id}">—</td>
 <td id="sellAuction_${id}">—</td>
 <td id="profitAuction_${id}">—</td>
+-->
 <td>${needsAuction ? '<span class="small muted">needs auction</span>' : ''}</td>`;
   tbody.appendChild(tr);
 }
