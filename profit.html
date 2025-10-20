@@ -167,6 +167,38 @@ function parseRecipeGrid(recipe){
   for(const v of Object.values(recipe)){ if(!v || typeof v!=='string') continue; const [raw,cnt]=v.split(':'); const id=(raw||'').toUpperCase().replace(/^minecraft:/i,'').replace(/\s+/g,'_'); map[id]=(map[id]||0)+Math.max(1,Number(cnt)||1); }
   return map;
 }
+// === Added support for 2-step material calculation ===
+
+// Global caches
+const itemInfoMap = {};
+let skyblockItemsLoaded = false;
+
+// Load all SkyBlock item data once
+async function loadSkyblockItems() {
+  if (skyblockItemsLoaded) return;
+  const res = await fetch('https://api.hypixel.net/resources/skyblock/items');
+  const data = await res.json();
+  for (const item of data.items) itemInfoMap[item.id] = item;
+  skyblockItemsLoaded = true;
+}
+
+// Recursively calculate the base material Bazaar cost
+function getBaseMaterialCost(id, qty = 1, depth = 0, bazaarMap) {
+  if (depth > 5) return 0; // avoid infinite recursion, treat missing as 0
+  const mat = bazaarMap[id];
+  if (mat) return priceBazaarBuyOffer(mat) * qty; // direct bazaar item
+
+  const info = itemInfoMap[id];
+  if (!info || !info.recipe) return 0; // treat unknown recipe as 0 cost
+
+  const recipeMap = parseRecipeGrid(info.recipe);
+  let total = 0;
+  for (const [ing, amount] of Object.entries(recipeMap)) {
+    total += getBaseMaterialCost(ing, amount, depth + 1, bazaarMap);
+  }
+  return total * qty;
+}
+
 
 // Auto-run + compute
 async function runOnce(topN=null){
@@ -185,16 +217,24 @@ for (const [id, info] of Object.entries(mappings)) {
   const recipeMap = parseRecipeGrid(info.recipe);
 
   // Craft cost = sum of raw materials' BUY OFFER
-  let craftBazaar = 0, needsAuction = false;
-  for (const [ing, qty] of Object.entries(recipeMap)) {
-    const mat = bazaarMap[ing];
-    if (!mat) { needsAuction = true; craftBazaar = null; break; }
-    craftBazaar += priceBazaarBuyOffer(mat) * qty;
-  }
+// Craft cost = sum of raw materials' BUY OFFER, using 2-step base material calculation
+let craftBazaar = 0;
+for (const [ing, qty] of Object.entries(recipeMap)) {
+  const cost = getBaseMaterialCost(ing, qty, 0, bazaarMap);
+  craftBazaar += cost;
+}
+
+// If any ingredient requires auction (cannot find a bazaar/base cost), mark needsAuction
+let needsAuction = Object.entries(recipeMap).some(([ing]) => {
+  return getBaseMaterialCost(ing, 1, 0, bazaarMap) === 0 && !bazaarMap[ing];
+});
+if (craftBazaar === 0) craftBazaar = null;
+
 
   const prod = bazaarMap[id];
   const sellBazaar = prod ? priceBazaarBuyOffer(prod) : null;
 
+  // Use Hypixel API's weekly moving average stats
   const buyWeek = prod?.quick_status?.buyMovingWeek ?? null;
   const sellWeek = prod?.quick_status?.sellMovingWeek ?? null;
 
@@ -214,11 +254,11 @@ for (const [id, info] of Object.entries(mappings)) {
     craftBazaar,
     sellBazaar,
     profitBazaar,
-/* Hidden for now
+    /* Hidden for now
     craftAuction: null,
     sellAuction: null,
     profitAuction: null,
-*/
+    */
     buyWeek,
     sellWeek,
     needsAuction
@@ -227,21 +267,24 @@ for (const [id, info] of Object.entries(mappings)) {
 
   const tr = document.createElement('tr');
   tr.id = 'row_' + id;
+
   tr.innerHTML = `
 <td class="tooltip" data-tip="${tip.replace(/"/g, '')}">${entry.name}</td>
 <td>${craftBazaar == null ? '-' : human(craftBazaar)}</td>
 <td>${sellBazaar == null ? '-' : human(sellBazaar)}</td>
 <td>${profitBazaar == null ? '<span class="bad">0</span>' : (profitBazaar >= 0 ? `<span class="good">+${human(profitBazaar)}</span>` : `<span class="bad">${human(profitBazaar)}</span>`)}</td>
-<td>${entry.buyWeek==null ? '-' : human(entry.buyWeek)}</td>
-<td>${entry.sellWeek==null ? '-' : human(entry.sellWeek)}</td>
+<td>${entry.buyWeek == null ? '-' : human(entry.buyWeek)}</td>
+<td>${entry.sellWeek == null ? '-' : human(entry.sellWeek)}</td>
 <!-- Hidden for now
 <td id="craftAuction_${id}">—</td>
 <td id="sellAuction_${id}">—</td>
 <td id="profitAuction_${id}">—</td>
 -->
 <td>${needsAuction ? '<span class="small muted">needs auction</span>' : ''}</td>`;
+
   tbody.appendChild(tr);
 }
+
 
     // auto-sort by profitBazaar descending
     const sortedRows = Array.from(tbody.querySelectorAll('tr'));
