@@ -113,6 +113,7 @@ input[type=number]::-webkit-outer-spin-button {
           <th data-key="craftBazaar" style="z-index: 2;">Craft Cost (Bazaar)</th>
           <th data-key="sellBazaar" style="z-index: 2;">Sell (Bazaar)</th>
           <th data-key="profitBazaar" style="z-index: 2;">Profit (Bazaar)</th>
+          <th data-key="profitInstant" style="z-index: 2;">Instant Profit</th>
           <th data-key="sellWceek" style="z-index: 2;">Weekly Sell</th>
           <th data-key="buyWeek" style="z-index: 2;">Weekly Buy</th>
 <!-- Hidden for now
@@ -249,13 +250,15 @@ for (const [id, info] of Object.entries(mappings)) {
   const sellWeek = prod?.quick_status?.sellMovingWeek ?? null;
 
   const profitBazaar = ((sellBazaar ?? 0) - (craftBazaar ?? 0));
-
+  const profitInstant = (sellBazaar ?? 0) - (craftBazaar ?? 0);
+  
   const entry = {
     item: id,
     name: info.name || id,
     craftBazaar,
     sellBazaar,
     profitBazaar,
+    profitInstant,
     /* Hidden for now
     craftAuction: null,
     sellAuction: null,
@@ -275,6 +278,7 @@ for (const [id, info] of Object.entries(mappings)) {
 <td>${craftBazaar == null ? '-' : human(craftBazaar)}</td>
 <td>${sellBazaar == null ? '-' : human(sellBazaar)}</td>
 <td>${profitBazaar == null ? '<span class="bad">0</span>' : (profitBazaar >= 0 ? `<span class="good">+${human(profitBazaar)}</span>` : `<span class="bad">${human(profitBazaar)}</span>`)}</td>
+<td>${profitInstant == null ? '<span class="bad">0</span>' : (profitInstant >= 0 ? `<span class="good">+${human(profitInstant)}</span>` : `<span class="bad">${human(profitInstant)}</span>`)}</td>
 <td>${entry.buyWeek == null ? '-' : human(entry.buyWeek)}</td>
 <td>${entry.sellWeek == null ? '-' : human(entry.sellWeek)}</td>
 <!-- Hidden for now
