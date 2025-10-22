@@ -250,7 +250,7 @@ for (const [id, info] of Object.entries(mappings)) {
   const sellWeek = prod?.quick_status?.sellMovingWeek ?? null;
 
   const profitBazaar = ((sellBazaar ?? 0) - (craftBazaar ?? 0));
-  const sellPrice = prod ? priceBazaarBuyOffer(prod) : null;
+  const sellPrice = prod ? priceBazaarSellOffer(prod) : null;
   const profitInstant = (sellPrice ?? 0) - (craftBazaar ?? 0);
 
   
