@@ -47,13 +47,61 @@ const REFRESH_MS = 30_000;
 
 let allItems = [];
 let selectedItem = null;
-let selectedRange = 1;
+let selectedRange = 1; // hours
+
+const MIN_RANGE = 0.05;     // ~3 minutes
+const MAX_RANGE = 24 * 30;  // 30 days
 
 const ctx = document.getElementById("chart");
+
 const chart = new Chart(ctx, {
   type: "line",
-  data: { labels: [], datasets: [ { label:"Buy", borderColor:"#58a6ff", data:[] }, { label:"Sell", borderColor:"#3fb950", data:[] } ] },
-  options: { responsive:true, maintainAspectRatio:false, interaction:{mode:"index",intersect:false}, scales:{y:{title:{display:true,text:"Coins"}}} }
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Buy",
+        borderColor: "#58a6ff",
+        data: [],
+        tension: 0.25,
+        pointRadius: 0
+      },
+      {
+        label: "Sell",
+        borderColor: "#3fb950",
+        data: [],
+        tension: 0.25,
+        pointRadius: 0
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    scales: {
+      x: {
+        grid: {
+          display: true,
+          color: "rgba(255,255,255,0.06)"
+        },
+        ticks: {
+          color: "#8b949e",
+          maxTicksLimit: 8
+        }
+      },
+      y: {
+        title: { display: true, text: "Coins" },
+        grid: {
+          display: true,
+          color: "rgba(255,255,255,0.06)"
+        },
+        ticks: {
+          color: "#8b949e"
+        }
+      }
+    }
+  }
 });
 
 // ───────── Load items ─────────
@@ -68,7 +116,8 @@ async function loadItems() {
 function renderItems(filter="") {
   const container = document.getElementById("items");
   container.innerHTML = "";
-  allItems.filter(i => i.toLowerCase().includes(filter))
+  allItems
+    .filter(i => i.toLowerCase().includes(filter))
     .forEach(i => {
       const div = document.createElement("div");
       div.className = "item";
@@ -93,26 +142,26 @@ async function updateChart() {
     const res = await fetch(`${BACKEND}/api/item/${selectedItem}`);
     let data = await res.json();
 
-    const cutoff = selectedRange === Infinity
-      ? 0
-      : Date.now() - selectedRange * 60 * 60 * 1000;
+    const cutoff =
+      selectedRange >= MAX_RANGE
+        ? 0
+        : Date.now() - selectedRange * 60 * 60 * 1000;
 
     data = data.filter(p => p.t >= cutoff);
+    if (!data.length) return;
 
     const labels = data.map(p => new Date(p.t).toLocaleTimeString());
     const buyData = data.map(p => p.buy);
     const sellData = data.map(p => p.sell);
 
-    // ─── Compute padding ───
+    // ─── Y padding ───
     const values = [...buyData, ...sellData].filter(v => v > 0);
-    if (!values.length) return;
-
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const padding = (max - min) * 0.3 || min * 0.05 || 1;
+    const pad = (max - min) * 0.25 || min * 0.05 || 1;
 
-    chart.options.scales.y.min = Math.max(0, min - padding);
-    chart.options.scales.y.max = max + padding;
+    chart.options.scales.y.min = Math.max(0, min - pad);
+    chart.options.scales.y.max = max + pad;
 
     chart.data.labels = labels;
     chart.data.datasets[0].data = buyData;
@@ -124,14 +173,35 @@ async function updateChart() {
   }
 }
 
+// ───────── Scroll zoom on chart ─────────
+ctx.addEventListener("wheel", e => {
+  e.preventDefault();
+
+  const zoomFactor = e.deltaY < 0 ? 0.8 : 1.25;
+  selectedRange *= zoomFactor;
+
+  selectedRange = Math.min(
+    MAX_RANGE,
+    Math.max(MIN_RANGE, selectedRange)
+  );
+
+  updateChart();
+}, { passive: false });
 
 // ───────── Event listeners ─────────
-document.getElementById("search").addEventListener("input", e => renderItems(e.target.value.toLowerCase()));
-document.getElementById("range").addEventListener("change", e => { selectedRange = Number(e.target.value); updateChart(); });
+document.getElementById("search")
+  .addEventListener("input", e => renderItems(e.target.value.toLowerCase()));
+
+document.getElementById("range")
+  .addEventListener("change", e => {
+    selectedRange = Number(e.target.value);
+    updateChart();
+  });
 
 // ───────── Init ─────────
 loadItems();
 setInterval(updateChart, REFRESH_MS);
 </script>
+
 </body>
 </html>
