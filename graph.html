@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hypixel Bazaar Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@font-face {font-family: 'chemrea'; src: url('https://static.wfonts.com/data/2016/05/31/chemical-reaction-a-brk/chemrea.ttf') format('truetype'); font-display: swap;}
+* {overflow: scroll}
+body {font-family:'chemrea'; display:grid; grid-template-columns:300px 1fr; height:100vh; background:#0e1117; color:#c9d1d9; font-size:14px;}
+aside { border-right:1px solid #30363d; display:flex; flex-direction:column; }
+input,select {margin:0; padding:8px; border:1px solid #30363d; background:#0b0e13; color:#c9d1d9; }
+select#range {position: relative; margin:0; padding:8px; border:1px solid #30363d; background:#0b0e13; color:#c9d1d9; }
+.item { padding:8px 12px; cursor:pointer; }
+.item:hover { background:#1f2937; }
+main { padding:16px;}
+#chartWrap {height: 60vh}
+</style>
+</head>
+<body>
+
+<aside>
+  <input id="search" placeholder="Search items...">
+  <div id="items"></div>
+</aside>
+
+<main>
+  <h2 id="title">Select an item</h2>
+
+  <label for="range">Time range:</label>
+  <select id="range">
+    <option value="1">1 Hour</option>
+    <option value="12">12 Hours</option>
+    <option value="24">24 Hours</option>
+    <option value="168">7 Days</option>
+    <option value="720">30 Days</option>
+  </select>
+
+  <div id="chartWrap">
+    <canvas id="chart"></canvas>
+  </div>
+</main>
+
+<script>
+const BACKEND = "https://bazaar.serveousercontent.com"; 
+const REFRESH_MS = 30_000;
+
+let allItems = [];
+let selectedItem = null;
+let selectedRange = 1;
+
+const ctx = document.getElementById("chart");
+const chart = new Chart(ctx, {
+  type: "line",
+  data: { labels: [], datasets: [ { label:"Buy", borderColor:"#58a6ff", data:[] }, { label:"Sell", borderColor:"#3fb950", data:[] } ] },
+  options: { responsive:true, maintainAspectRatio:false, interaction:{mode:"index",intersect:false}, scales:{y:{title:{display:true,text:"Coins"}}} }
+});
+
+// ───────── Load items ─────────
+async function loadItems() {
+  try {
+    const res = await fetch(`${BACKEND}/api/items`);
+    allItems = await res.json();
+    renderItems();
+  } catch(e){ console.error("Error fetching items:", e); }
+}
+
+function renderItems(filter="") {
+  const container = document.getElementById("items");
+  container.innerHTML = "";
+  allItems.filter(i => i.toLowerCase().includes(filter))
+    .forEach(i => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.textContent = i;
+      div.onclick = () => selectItem(i);
+      container.appendChild(div);
+    });
+}
+
+// ───────── Select an item ─────────
+async function selectItem(id) {
+  selectedItem = id;
+  document.getElementById("title").textContent = id;
+  await updateChart();
+}
+
+// ───────── Update chart ─────────
+async function updateChart() {
+  if (!selectedItem) return;
+
+  try {
+    const res = await fetch(`${BACKEND}/api/item/${selectedItem}`);
+    let data = await res.json();
+
+    const cutoff = selectedRange === Infinity
+      ? 0
+      : Date.now() - selectedRange * 60 * 60 * 1000;
+
+    data = data.filter(p => p.t >= cutoff);
+
+    const labels = data.map(p => new Date(p.t).toLocaleTimeString());
+    const buyData = data.map(p => p.buy);
+    const sellData = data.map(p => p.sell);
+
+    // ─── Compute padding ───
+    const values = [...buyData, ...sellData].filter(v => v > 0);
+    if (!values.length) return;
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const padding = (max - min) * 0.3 || min * 0.05 || 1;
+
+    chart.options.scales.y.min = Math.max(0, min - padding);
+    chart.options.scales.y.max = max + padding;
+
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = buyData;
+    chart.data.datasets[1].data = sellData;
+
+    chart.update();
+  } catch (e) {
+    console.error("Error updating chart:", e);
+  }
+}
+
+
+// ───────── Event listeners ─────────
+document.getElementById("search").addEventListener("input", e => renderItems(e.target.value.toLowerCase()));
+document.getElementById("range").addEventListener("change", e => { selectedRange = Number(e.target.value); updateChart(); });
+
+// ───────── Init ─────────
+loadItems();
+setInterval(updateChart, REFRESH_MS);
+</script>
+</body>
+</html>
