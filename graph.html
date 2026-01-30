@@ -4,19 +4,68 @@
 <meta charset="UTF-8">
 <title>Hypixel Bazaar Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-@font-face {font-family: 'chemrea'; src: url('https://static.wfonts.com/data/2016/05/31/chemical-reaction-a-brk/chemrea.ttf') format('truetype'); font-display: swap;}
-* {overflow: scroll}
-body {font-family:'chemrea'; display:grid; grid-template-columns:300px 1fr; height:100vh; background:#0e1117; color:#c9d1d9; font-size:14px;}
-aside { border-right:1px solid #30363d; display:flex; flex-direction:column; }
-input,select {margin:0; padding:8px; border:1px solid #30363d; background:#0b0e13; color:#c9d1d9; }
-select#range {position: relative; margin:0; padding:8px; border:1px solid #30363d; background:#0b0e13; color:#c9d1d9; }
-.item { padding:8px 12px; cursor:pointer; }
-.item:hover { background:#1f2937; }
-main { padding:16px;}
-#chartWrap {height: 60vh}
+@font-face {
+  font-family: 'chemrea';
+  src: url('https://static.wfonts.com/data/2016/05/31/chemical-reaction-a-brk/chemrea.ttf') format('truetype');
+  font-display: swap;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'chemrea';
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: 100vh;
+  background: #0e1117;
+  color: #c9d1d9;
+  font-size: 14px;
+}
+
+aside {
+  border-right: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+main {
+  padding: 16px;
+  overflow: hidden;
+}
+
+input, select {
+  padding: 8px;
+  border: 1px solid #30363d;
+  background: #0b0e13;
+  color: #c9d1d9;
+  font-family: inherit;
+}
+
+.item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: #1f2937;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#chartWrap {
+  height: 60vh;
+}
 </style>
 </head>
+
 <body>
 
 <aside>
@@ -27,14 +76,21 @@ main { padding:16px;}
 <main>
   <h2 id="title">Select an item</h2>
 
-  <label for="range">Time range:</label>
-  <select id="range">
-    <option value="1">1 Hour</option>
-    <option value="12">12 Hours</option>
-    <option value="24">24 Hours</option>
-    <option value="168">7 Days</option>
-    <option value="720">30 Days</option>
-  </select>
+  <div class="controls">
+    <select id="range">
+      <option value="1">1 Hour</option>
+      <option value="12">12 Hours</option>
+      <option value="24">24 Hours</option>
+      <option value="168">7 Days</option>
+      <option value="720">30 Days</option>
+    </select>
+
+    <select id="chartType">
+      <option value="line">Line</option>
+      <option value="area">Area</option>
+      <option value="points">Points</option>
+    </select>
+  </div>
 
   <div id="chartWrap">
     <canvas id="chart"></canvas>
@@ -42,36 +98,41 @@ main { padding:16px;}
 </main>
 
 <script>
-const BACKEND = "https://bazaar.serveousercontent.com"; 
+const BACKEND = "https://bazaar.serveousercontent.com";
 const REFRESH_MS = 30_000;
 
 let allItems = [];
 let selectedItem = null;
-let selectedRange = 1; // hours
+let selectedRange = 1;
+let currentChartType = "line";
 
-const MIN_RANGE = 0.05;     // ~3 minutes
-const MAX_RANGE = 24 * 30;  // 30 days
+const MIN_RANGE = 0.05;
+const MAX_RANGE = 24 * 30;
 
 const ctx = document.getElementById("chart");
 
-const chart = new Chart(ctx, {
+let chart = new Chart(ctx, {
   type: "line",
   data: {
     labels: [],
     datasets: [
       {
         label: "Buy",
-        borderColor: "#58a6ff",
         data: [],
+        borderColor: "#58a6ff",
+        backgroundColor: "rgba(88,166,255,0.25)",
         tension: 0.25,
-        pointRadius: 0
+        pointRadius: 0,
+        fill: false
       },
       {
         label: "Sell",
-        borderColor: "#3fb950",
         data: [],
+        borderColor: "#3fb950",
+        backgroundColor: "rgba(63,185,80,0.25)",
         tension: 0.25,
-        pointRadius: 0
+        pointRadius: 0,
+        fill: false
       }
     ]
   },
@@ -79,26 +140,24 @@ const chart = new Chart(ctx, {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
+
+    plugins: {
+      decimation: {
+        enabled: true,
+        algorithm: "lttb",
+        samples: 400
+      }
+    },
+
     scales: {
       x: {
-        grid: {
-          display: true,
-          color: "rgba(255,255,255,0.06)"
-        },
-        ticks: {
-          color: "#8b949e",
-          maxTicksLimit: 8
-        }
+        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { color: "#8b949e", maxTicksLimit: 8 }
       },
       y: {
         title: { display: true, text: "Coins" },
-        grid: {
-          display: true,
-          color: "rgba(255,255,255,0.06)"
-        },
-        ticks: {
-          color: "#8b949e"
-        }
+        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { color: "#8b949e" }
       }
     }
   }
@@ -106,14 +165,12 @@ const chart = new Chart(ctx, {
 
 // ───────── Load items ─────────
 async function loadItems() {
-  try {
-    const res = await fetch(`${BACKEND}/api/items`);
-    allItems = await res.json();
-    renderItems();
-  } catch(e){ console.error("Error fetching items:", e); }
+  const res = await fetch(`${BACKEND}/api/items`);
+  allItems = await res.json();
+  renderItems();
 }
 
-function renderItems(filter="") {
+function renderItems(filter = "") {
   const container = document.getElementById("items");
   container.innerHTML = "";
   allItems
@@ -127,7 +184,7 @@ function renderItems(filter="") {
     });
 }
 
-// ───────── Select an item ─────────
+// ───────── Select item ─────────
 async function selectItem(id) {
   selectedItem = id;
   document.getElementById("title").textContent = id;
@@ -138,57 +195,76 @@ async function selectItem(id) {
 async function updateChart() {
   if (!selectedItem) return;
 
-  try {
-    const res = await fetch(`${BACKEND}/api/item/${selectedItem}`);
-    let data = await res.json();
+  const res = await fetch(`${BACKEND}/api/item/${selectedItem}`);
+  let data = await res.json();
 
-    const cutoff =
-      selectedRange >= MAX_RANGE
-        ? 0
-        : Date.now() - selectedRange * 60 * 60 * 1000;
+  const cutoff = Date.now() - selectedRange * 60 * 60 * 1000;
+  data = data.filter(p => p.t >= cutoff);
+  if (!data.length) return;
 
-    data = data.filter(p => p.t >= cutoff);
-    if (!data.length) return;
+  const labels = data.map(p => new Date(p.t).toLocaleTimeString());
+  const buy = data.map(p => p.buy);
+  const sell = data.map(p => p.sell);
 
-    const labels = data.map(p => new Date(p.t).toLocaleTimeString());
-    const buyData = data.map(p => p.buy);
-    const sellData = data.map(p => p.sell);
+  const values = [...buy, ...sell].filter(v => v > 0);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = (max - min) * 0.25 || min * 0.05 || 1;
 
-    // ─── Y padding ───
-    const values = [...buyData, ...sellData].filter(v => v > 0);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const pad = (max - min) * 0.25 || min * 0.05 || 1;
+  chart.options.scales.y.min = Math.max(0, min - pad);
+  chart.options.scales.y.max = max + pad;
 
-    chart.options.scales.y.min = Math.max(0, min - pad);
-    chart.options.scales.y.max = max + pad;
+  chart.options.plugins.decimation.samples =
+    selectedRange > 168 ? 200 :
+    selectedRange > 24  ? 350 :
+    700;
 
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = buyData;
-    chart.data.datasets[1].data = sellData;
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = buy;
+  chart.data.datasets[1].data = sell;
 
-    chart.update();
-  } catch (e) {
-    console.error("Error updating chart:", e);
-  }
+  chart.update();
 }
 
-// ───────── Scroll zoom on chart ─────────
+// ───────── Chart type selector ─────────
+document.getElementById("chartType").addEventListener("change", e => {
+  currentChartType = e.target.value;
+
+  chart.data.datasets.forEach(ds => {
+    if (currentChartType === "line") {
+      ds.showLine = true;
+      ds.fill = false;
+      ds.pointRadius = 0;
+      ds.tension = 0.25;
+    }
+
+    if (currentChartType === "area") {
+      ds.showLine = true;
+      ds.fill = true;
+      ds.pointRadius = 0;
+      ds.tension = 0.25;
+    }
+
+    if (currentChartType === "points") {
+      ds.showLine = false;
+      ds.fill = false;
+      ds.pointRadius = 4;
+      ds.pointStyle = "rect";
+    }
+  });
+
+  chart.update();
+});
+
+// ───────── Scroll zoom ─────────
 ctx.addEventListener("wheel", e => {
   e.preventDefault();
-
-  const zoomFactor = e.deltaY < 0 ? 0.8 : 1.25;
-  selectedRange *= zoomFactor;
-
-  selectedRange = Math.min(
-    MAX_RANGE,
-    Math.max(MIN_RANGE, selectedRange)
-  );
-
+  selectedRange *= e.deltaY < 0 ? 0.8 : 1.25;
+  selectedRange = Math.min(MAX_RANGE, Math.max(MIN_RANGE, selectedRange));
   updateChart();
 }, { passive: false });
 
-// ───────── Event listeners ─────────
+// ───────── UI events ─────────
 document.getElementById("search")
   .addEventListener("input", e => renderItems(e.target.value.toLowerCase()));
 
