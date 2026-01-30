@@ -132,13 +132,13 @@ input[type=number]::-webkit-outer-spin-button {
 <script>
 const el = s=>document.querySelector(s);
 
-// Hide invalid rows (craftBazaar = -)
 document.getElementById('hideInvalidSwitch').addEventListener('change', function() {
   const hideInvalid = this.checked;
   const rows = document.querySelectorAll('#resultsTable tbody tr');
   rows.forEach(row => {
-    const craftVal = row.children[1].textContent.trim();
-    row.style.display = (hideInvalid && craftVal === '-') ? 'none' : '';
+    const tooltip = row.querySelector('.tooltip')?.getAttribute('data-tip') || '';
+    const isInvalid = tooltip.includes('(no buy offer)');
+    row.style.display = (hideInvalid && isInvalid) ? 'none' : '';
   });
 });
 
@@ -223,19 +223,21 @@ for (const [id, info] of Object.entries(mappings)) {
   // Build tooltip dynamically
   let tip = '';
 
-  for (const [ing, qty] of Object.entries(recipeMap)) {
+for (const [ing, qty] of Object.entries(recipeMap)) {
     // Recursive base material cost
     const cost = getBaseMaterialCost(ing, qty, 0, bazaarMap);
 
     // Add to craft cost
     craftBazaar += cost ?? 0;
 
-    // If cost is null, mark needs auction
-    if (cost === null) needsAuction = true;
+    // If cost is null or 0, mark needsAuction
+    const invalid = (cost == null || cost === 0);
+    if (invalid) needsAuction = true;
 
-    // Add tooltip entry WITHOUT "may need auction"
-    tip += `${qty} × ${ing}\n`;
-  }
+    // Add tooltip entry
+    tip += `${qty} × ${ing} ${invalid ? '(no buy offer)' : ''}\n`;
+}
+
 
   // If all costs are zero, treat as null
   if (craftBazaar === 0) craftBazaar = null;
